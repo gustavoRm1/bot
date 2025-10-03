@@ -925,13 +925,13 @@ async def setup_bot_handlers(application, token):
             # Order bump para mensal
             await send_order_bump_mensal(query)
         elif query.data == "aceitar_bonus":
-            await create_payment(query, 32.87, "VITALÍCIO + SALA VERMELHA", user_id)
+            await create_payment(query, 32.87, "VITALÍCIO + SALA VERMELHA", user_id, token)
         elif query.data == "nao_quero_bonus":
-            await create_payment(query, 19.97, "VITALÍCIO", user_id)
+            await create_payment(query, 19.97, "VITALÍCIO", user_id, token)
         elif query.data == "aceitar_bonus_mensal":
-            await create_payment(query, 27.87, "1 MÊS + PACOTE SOMBRIO", user_id)
+            await create_payment(query, 27.87, "1 MÊS + PACOTE SOMBRIO", user_id, token)
         elif query.data == "nao_quero_bonus_mensal":
-            await create_payment(query, 14.97, "1 MÊS", user_id)
+            await create_payment(query, 14.97, "1 MÊS", user_id, token)
         elif query.data.startswith("verificar_pagamento"):
             # Extrair user_id do callback_data
             if "_" in query.data:
@@ -1293,7 +1293,7 @@ async def send_order_bump_mensal(query):
         await query.edit_message_text(order_bump_text, reply_markup=reply_markup)
         # Fallback para texto
 
-async def create_payment(query, amount, description, user_id):
+async def create_payment(query, amount, description, user_id, bot_token=None):
     """Cria pagamento PIX com fallback simples entre gateways"""
     try:
         event_logger.info(f"Pagamento criado: R$ {amount} - {description}")
@@ -1346,12 +1346,13 @@ async def create_payment(query, amount, description, user_id):
             await query.message.reply_text("❌ Erro ao gerar código PIX. Tente novamente.")
             return
         
-        # Obter token do bot atual
-        current_bot_token = None
-        for token, bot_info in active_bots.items():
-            if bot_info['status'] == 'active':
-                current_bot_token = token
-                break
+        # Usar o token do bot passado como parâmetro, ou obter um ativo como fallback
+        current_bot_token = bot_token
+        if not current_bot_token:
+            for token, bot_info in active_bots.items():
+                if bot_info['status'] == 'active':
+                    current_bot_token = token
+                    break
         
         # Armazenar dados do pagamento
         pending_payments[user_id] = {
@@ -1622,9 +1623,9 @@ async def send_access_link(user_id, bot_token=None):
         
         if bot_token and bot_token in BOT_LINKS:
             access_link = BOT_LINKS[bot_token]
-            event_logger.info(f"Usando link específico do bot: {access_link}")
+            event_logger.info(f"Usando link específico do bot {bot_token[:20]}...: {access_link}")
         else:
-            event_logger.info(f"Usando link padrão: {access_link}")
+            event_logger.info(f"Bot token não encontrado ou inválido: {bot_token}, usando link padrão: {access_link}")
         
         access_message = f"""🔓 Para Liberar Seu Acesso
 ⬇️Clique aqui⬇️
@@ -1644,8 +1645,10 @@ async def send_access_link(user_id, bot_token=None):
                 text=access_message
             )
             
-            event_logger.info(f"Link de acesso enviado: {access_link}")
+            event_logger.info(f"Link de acesso enviado para usuário {user_id}: {access_link}")
             add_event('INFO', f'Link de acesso enviado para usuário {user_id}: {access_link}', user_id)
+        else:
+            logger.error("Nenhum bot ativo encontrado para enviar link de acesso")
         
     except Exception as e:
         logger.error(f"Erro ao enviar link de acesso: {e}")
