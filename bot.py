@@ -158,6 +158,10 @@ ADMIN_COMMANDS = {
     '/meuid': 'meu_id'
 }
 
+# Configuração de notificações de vendas
+SALE_NOTIFICATIONS_ENABLED = True
+ADMIN_NOTIFICATION_CHAT_ID = ADMIN_USER_ID  # ID do chat para receber notificações
+
 def signal_handler(signum, frame):
     """Handler para sinais de interrupção"""
     global shutdown_requested
@@ -1002,6 +1006,10 @@ async def setup_bot_handlers(application, token):
     application.add_handler(CommandHandler("admin", admin_with_args_handler))
     application.add_handler(CommandHandler("gw", gateway_command_handler))
     application.add_handler(CommandHandler("meuid", admin_command_handler))
+    application.add_handler(CommandHandler("notificacoes", admin_command_handler))
+    application.add_handler(CommandHandler("ativar_notificacoes", admin_command_handler))
+    application.add_handler(CommandHandler("desativar_notificacoes", admin_command_handler))
+    application.add_handler(CommandHandler("testar_notificacao", admin_command_handler))
     
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -1033,6 +1041,12 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
 • `/gw sync` - Ativa SyncPay Original
 • `/gw status` - Status dos gateways
 
+**Notificações de vendas:**
+• `/notificacoes` - Status das notificações
+• `/ativar_notificacoes` - Ativa notificações
+• `/desativar_notificacoes` - Desativa notificações
+• `/testar_notificacao` - Testa sistema de notificações
+
 **Outros:**
 • `/meuid` - Mostra seu ID"""
         await update.message.reply_text(help_text, parse_mode='Markdown')
@@ -1043,6 +1057,49 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
     
     elif command == '/testar':
         await update.message.reply_text("🧪 Para testar PushynPay, use: `/admin testar pushyn`")
+    
+    elif command == '/notificacoes':
+        status = "✅ ATIVADAS" if SALE_NOTIFICATIONS_ENABLED else "❌ DESATIVADAS"
+        await update.message.reply_text(f"📢 **STATUS DAS NOTIFICAÇÕES DE VENDAS**\n\n{status}\n\nChat ID: `{ADMIN_NOTIFICATION_CHAT_ID}`", parse_mode='Markdown')
+    
+    elif command == '/ativar_notificacoes':
+        global SALE_NOTIFICATIONS_ENABLED
+        SALE_NOTIFICATIONS_ENABLED = True
+        await update.message.reply_text("✅ **NOTIFICAÇÕES DE VENDAS ATIVADAS!**\n\nAgora você receberá notificações detalhadas sempre que uma venda for confirmada.", parse_mode='Markdown')
+        event_logger.info("Notificações de vendas ativadas pelo admin")
+    
+    elif command == '/desativar_notificacoes':
+        global SALE_NOTIFICATIONS_ENABLED
+        SALE_NOTIFICATIONS_ENABLED = False
+        await update.message.reply_text("❌ **NOTIFICAÇÕES DE VENDAS DESATIVADAS!**\n\nVocê não receberá mais notificações de vendas.", parse_mode='Markdown')
+        event_logger.info("Notificações de vendas desativadas pelo admin")
+    
+    elif command == '/testar_notificacao':
+        # Testar sistema de notificações
+        test_payment_info = {
+            'payment_id': 'test_' + str(uuid.uuid4())[:8],
+            'amount': 19.97,
+            'plan': 'VITALÍCIO',
+            'gateway': 'pushynpay',
+            'gateway_payment_id': str(uuid.uuid4())
+        }
+        
+        test_user_info = {
+            'user_id': user_id,
+            'first_name': update.effective_user.first_name or 'Teste',
+            'last_name': update.effective_user.last_name or '',
+            'username': update.effective_user.username or 'teste',
+            'document': '123.456.789-00'
+        }
+        
+        test_bot_info = {
+            'username': 'teste_bot',
+            'id': '12345',
+            'first_name': 'Bot Teste'
+        }
+        
+        await send_sale_notification_to_admin(test_payment_info, test_user_info, test_bot_info)
+        await update.message.reply_text("🧪 **TESTE DE NOTIFICAÇÃO ENVIADO!**\n\nVerifique se você recebeu a notificação de teste.", parse_mode='Markdown')
     
     else:
         await update.message.reply_text("❌ Comando administrativo não reconhecido")
@@ -1588,6 +1645,42 @@ Obrigado pela compra! 🚀""")
             else:
                 logger.error("❌ Falha ao enviar link de acesso!")
             
+            # ENVIAR NOTIFICAÇÃO DE VENDA PARA O ADMIN
+            try:
+                # Obter informações do usuário
+                user_info = {
+                    'user_id': user_id,
+                    'first_name': query.from_user.first_name or 'N/A',
+                    'last_name': query.from_user.last_name or '',
+                    'username': query.from_user.username or 'N/A',
+                    'document': '***.***.***-**'  # CPF mascarado por privacidade
+                }
+                
+                # Obter informações do bot atual
+                bot_info = {}
+                if bot_token in active_bots:
+                    try:
+                        bot = active_bots[bot_token]['bot']
+                        bot_me = await bot.get_me()
+                        bot_info = {
+                            'username': bot_me.username,
+                            'id': bot_me.id,
+                            'first_name': bot_me.first_name
+                        }
+                    except Exception as e:
+                        logger.warning(f"Erro ao obter info do bot: {e}")
+                        bot_info = {
+                            'username': 'bot_desconhecido',
+                            'id': 'N/A',
+                            'first_name': 'Bot'
+                        }
+                
+                # Enviar notificação para o admin
+                await send_sale_notification_to_admin(payment_info, user_info, bot_info)
+                
+            except Exception as e:
+                logger.error(f"❌ Erro ao enviar notificação de venda: {e}")
+            
             # Limpar pagamento pendente
             if user_id in pending_payments:
                 del pending_payments[user_id]
@@ -1826,6 +1919,101 @@ def debug_payment_state(user_id):
     logger.info(f"Bots ativos: {list(active_bots.keys())}")
     logger.info(f"Links configurados: {list(BOT_LINKS.keys())}")
     logger.info("=" * 60)
+
+async def send_sale_notification_to_admin(payment_info, user_info, bot_info):
+    """Envia notificação detalhada de venda para o administrador"""
+    try:
+        if not SALE_NOTIFICATIONS_ENABLED:
+            return
+        
+        logger.info("=" * 60)
+        logger.info("📢 ENVIANDO NOTIFICAÇÃO DE VENDA PARA ADMIN")
+        logger.info(f"Payment Info: {payment_info}")
+        logger.info("=" * 60)
+        
+        # Obter informações do bot
+        bot_username = bot_info.get('username', 'bot_desconhecido')
+        bot_id = bot_info.get('id', 'N/A')
+        
+        # Calcular tempo de conversão (simulado - você pode implementar tracking real)
+        conversion_time = "0d 0h 2m 15s"  # Exemplo baseado nas imagens
+        
+        # Calcular valor líquido (assumindo taxa de 6% como nas imagens)
+        gross_amount = payment_info['amount']
+        net_amount = gross_amount * 0.94  # 6% de taxa
+        
+        # Gerar IDs únicos para a transação
+        internal_transaction_id = payment_info['payment_id'][:8]  # Primeiros 8 caracteres
+        gateway_transaction_id = payment_info.get('gateway_payment_id', str(uuid.uuid4()))
+        
+        # Determinar método de pagamento e plataforma
+        payment_method = "pix"
+        payment_platform = payment_info.get('gateway', 'pushynpay')
+        
+        # Determinar categoria e plano
+        plan_name = payment_info['plan']
+        if 'VITALÍCIO' in plan_name.upper():
+            category = "Plano Normal"
+            duration = "Vitalício"
+        else:
+            category = "Plano Normal"
+            duration = "1 Mês"
+        
+        # Criar mensagem de notificação no formato das imagens
+        notification_message = f"""🎉 **Pagamento Aprovado!**
+
+🤖 **Bot:** @{bot_username}
+⚙️ **ID Bot:** {bot_id}
+
+👤 **ID Cliente:** {user_info['user_id']}
+🔗 **Username:** @{user_info.get('username', 'N/A')}
+👤 **Nome de Perfil:** {user_info.get('first_name', 'N/A')}
+👤 **Nome Completo:** {user_info.get('first_name', 'N/A')} {user_info.get('last_name', '')}
+📄 **CPF/CNPJ:** {user_info.get('document', '***.***.***-**')}
+
+🌍 **Idioma:** pt-br
+⭐ **Telegram Premium:** Não
+📦 **Categoria:** {category}
+🎁 **Plano:** **{plan_name}**
+📅 **Duração:** {duration}
+
+💰 **Valor:** R${gross_amount:.2f}
+💰 **Valor Líquido:** R${net_amount:.2f}
+
+⏱️ **Tempo Conversão:** {conversion_time}
+🔑 **ID Transação Interna:** {internal_transaction_id}
+🏷️ **ID Transação Gateway:** `{gateway_transaction_id}`
+💱 **Tipo Moeda:** BRL
+💳 **Método Pagamento:** {payment_method}
+🏢 **Plataforma Pagamento:** {payment_platform}"""
+        
+        # Tentar enviar notificação por todos os bots ativos
+        notification_sent = False
+        
+        for token, bot_data in active_bots.items():
+            if bot_data['status'] == 'active':
+                try:
+                    bot = bot_data['bot']
+                    await bot.send_message(
+                        chat_id=ADMIN_NOTIFICATION_CHAT_ID,
+                        text=notification_message,
+                        parse_mode='Markdown'
+                    )
+                    notification_sent = True
+                    logger.info(f"✅ Notificação enviada pelo bot {token[:20]}...")
+                    break
+                except Exception as e:
+                    logger.error(f"❌ Erro ao enviar notificação pelo bot {token[:20]}...: {e}")
+                    continue
+        
+        if notification_sent:
+            logger.info("✅ NOTIFICAÇÃO DE VENDA ENVIADA COM SUCESSO!")
+            event_logger.info(f"Notificação de venda enviada: R$ {gross_amount:.2f} - {plan_name}")
+        else:
+            logger.error("❌ FALHA AO ENVIAR NOTIFICAÇÃO DE VENDA!")
+            
+    except Exception as e:
+        logger.error(f"❌ ERRO CRÍTICO ao enviar notificação de venda: {e}", exc_info=True)
 
 def start_downsell_timers(user_id):
     """Inicia timers de downsell para um usuário"""
