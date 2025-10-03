@@ -1081,9 +1081,10 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
         await update.message.reply_text("🧪 **INICIANDO TESTE DE NOTIFICAÇÃO...**\n\nVerificando configurações...", parse_mode='Markdown')
         
         # Verificar configurações
+        notifications_status = "✅ SIM" if SALE_NOTIFICATIONS_ENABLED else "❌ NÃO"
         debug_info = f"""🔍 **DEBUG - CONFIGURAÇÕES:**
 
-📢 Notificações ativas: {'✅ SIM' if SALE_NOTIFICATIONS_ENABLED else '❌ NÃO'}
+📢 Notificações ativas: {notifications_status}
 👤 Admin Chat ID: `{ADMIN_NOTIFICATION_CHAT_ID}`
 🤖 Bots ativos: {len(active_bots)}
 
@@ -1569,8 +1570,11 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         pending_payments[user_id] = payment_info
         
         # Armazenar no sistema compartilhado
-        from shared_data import add_pending_payment
-        add_pending_payment(user_id, payment_info)
+        try:
+            from shared_data import add_pending_payment
+            add_pending_payment(user_id, payment_info)
+        except ImportError:
+            logger.warning("Função add_pending_payment não disponível no shared_data")
         
         logger.info("=" * 60)
         logger.info("✅ PAGAMENTO CRIADO COM SUCESSO")
@@ -1675,8 +1679,13 @@ async def check_payment_status(query, user_id):
         if not payment_info:
             logger.warning(f"⚠️ Nenhum pagamento pendente para user {user_id}")
             # Tentar recuperar do sistema compartilhado
-            from shared_data import get_pending_payment
-            payment_info = get_pending_payment(user_id)
+            try:
+                from shared_data import get_pending_payments
+                all_payments = get_pending_payments()
+                payment_info = all_payments.get(str(user_id))
+            except ImportError:
+                logger.warning("Função get_pending_payments não disponível no shared_data")
+                payment_info = None
             
         if not payment_info:
             logger.error(f"❌ Pagamento não encontrado em nenhum local!")
@@ -1801,9 +1810,12 @@ Obrigado pela compra! 🚀""")
             # Limpar pagamento pendente
             if user_id in pending_payments:
                 del pending_payments[user_id]
-            from shared_data import remove_pending_payment, update_stats
-            remove_pending_payment(user_id)
-            update_stats('confirmed_payments')
+            try:
+                from shared_data import remove_pending_payment, update_stats
+                remove_pending_payment(user_id)
+                update_stats('confirmed_payments')
+            except ImportError:
+                logger.warning("Funções do shared_data não disponíveis")
             
             # Adicionar evento de pagamento confirmado
             add_event('PAYMENT_CONFIRMED', f'Pagamento confirmado: R$ {payment_info["amount"]:.2f} - {payment_info["plan"]}', user_id)
