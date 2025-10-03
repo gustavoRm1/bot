@@ -1386,7 +1386,18 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
                     timeout=30.0
                 )
                 
-                await update.message.reply_text("✅ **TESTE FINAL CONCLUÍDO COM SUCESSO!**\n\n🎯 Sistema de notificações funcionando perfeitamente!\n📱 Verifique se você recebeu a notificação de teste.\n🚀 Sistema pronto para produção!\n\n📊 **RESUMO DO SISTEMA:**\n• Notificações: ✅ ATIVAS\n• Bots ativos: ✅ {len(active_bots)}\n• Configurações: ✅ VÁLIDAS\n• Dados reais: ✅ IMPLEMENTADOS", parse_mode='Markdown')
+                # Mensagem de sucesso sem formatação problemática
+                success_message = "✅ **TESTE FINAL CONCLUÍDO COM SUCESSO!**\n\n"
+                success_message += "🎯 Sistema de notificações funcionando perfeitamente!\n"
+                success_message += "📱 Verifique se você recebeu a notificação de teste.\n"
+                success_message += "🚀 Sistema pronto para produção!\n\n"
+                success_message += "📊 **RESUMO DO SISTEMA:**\n"
+                success_message += "• Notificações: ✅ ATIVAS\n"
+                success_message += f"• Bots ativos: ✅ {len(active_bots)}\n"
+                success_message += "• Configurações: ✅ VÁLIDAS\n"
+                success_message += "• Dados reais: ✅ IMPLEMENTADOS"
+                
+                await update.message.reply_text(success_message, parse_mode='Markdown')
                 
             except asyncio.TimeoutError:
                 await update.message.reply_text("⏰ **TIMEOUT NO TESTE!**\n\nA função demorou mais de 30 segundos.\nVerifique os logs para detalhes.", parse_mode='Markdown')
