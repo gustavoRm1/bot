@@ -1296,7 +1296,30 @@ async def send_order_bump_mensal(query):
 async def create_payment(query, amount, description, user_id, bot_token=None):
     """Cria pagamento PIX com fallback simples entre gateways"""
     try:
-        event_logger.info(f"Pagamento criado: R$ {amount} - {description}")
+        logger.info("=" * 60)
+        logger.info("🔵 INICIANDO CRIAÇÃO DE PAGAMENTO")
+        logger.info(f"User ID: {user_id}")
+        logger.info(f"Amount: R$ {amount}")
+        logger.info(f"Description: {description}")
+        logger.info(f"Bot Token Recebido: {bot_token}")
+        logger.info(f"Bots Ativos: {list(active_bots.keys())}")
+        
+        # CRÍTICO: Garantir que bot_token seja capturado
+        if bot_token is None:
+            logger.warning("⚠️ Bot token não foi passado! Tentando recuperar de active_bots")
+            if active_bots:
+                bot_token = list(active_bots.keys())[0]
+                logger.info(f"✅ Bot token recuperado: {bot_token}")
+            else:
+                logger.error("❌ Nenhum bot ativo disponível!")
+                await query.message.reply_text("❌ Erro interno. Tente novamente.")
+                return
+        
+        # Validar se o bot_token existe em BOT_LINKS
+        if bot_token not in BOT_LINKS:
+            logger.warning(f"⚠️ Bot token {bot_token} não tem link específico - usando padrão")
+        else:
+            logger.info(f"✅ Link específico encontrado: {BOT_LINKS[bot_token]}")
         
         # Dados do cliente
         customer_data = {
@@ -1305,27 +1328,25 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
             "document": "12345678900"
         }
         
-        # Tentar PushinPay primeiro (já funcionava)
-        # Tentando PushinPay primeiro
+        # Tentar PushinPay primeiro
         try:
             payment_data = await create_pix_payment_pushynpay(user_id, amount, description, customer_data)
             if payment_data and payment_data.get('qr_code'):
-                # PushinPay funcionou
                 gateway_used = "pushynpay"
+                logger.info("✅ PushynPay funcionou")
             else:
                 raise Exception("PushinPay retornou sem código PIX")
         except Exception as e:
-            logger.warning(f"PushinPay falhou: {e}")
+            logger.warning(f"PushynPay falhou: {e}")
             payment_data = None
         
         # Se PushinPay falhou, tentar SyncPay Original
         if not payment_data:
-            # Tentando SyncPay Original
             try:
                 payment_data = await create_pix_payment_syncpay_original(user_id, amount, description, customer_data)
                 if payment_data and payment_data.get('pix_code'):
-                    # SyncPay Original funcionou
                     gateway_used = "syncpay_original"
+                    logger.info("✅ SyncPay Original funcionou")
                 else:
                     raise Exception("SyncPay retornou sem código PIX")
             except Exception as e:
@@ -1346,37 +1367,36 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
             await query.message.reply_text("❌ Erro ao gerar código PIX. Tente novamente.")
             return
         
-        # Usar o token do bot passado como parâmetro, ou obter um ativo como fallback
-        current_bot_token = bot_token
-        if not current_bot_token:
-            for token, bot_info in active_bots.items():
-                if bot_info['status'] == 'active':
-                    current_bot_token = token
-                    break
+        # Gerar ID único para o pagamento
+        payment_id = payment_data.get('id', str(uuid.uuid4()))
         
-        # Armazenar dados do pagamento
-        pending_payments[user_id] = {
-            'payment_id': payment_data.get('id', str(uuid.uuid4())),
+        # Criar objeto de pagamento com bot_token
+        payment_info = {
+            'payment_id': payment_id,
             'amount': amount,
             'plan': description,
             'gateway': gateway_used,
             'pix_code': pix_code,
-            'bot_token': current_bot_token  # Armazenar qual bot processou o pagamento
-        }
-        
-        # Registrar pagamento pendente no sistema compartilhado
-        from shared_data import add_pending_payment
-        add_pending_payment(user_id, {
-            'payment_id': payment_data.get('id') or str(uuid.uuid4()),
-            'amount': amount,
-            'plan': description,
-            'created_at': datetime.now().isoformat(),
             'status': 'pending',
+            'created_at': datetime.now().isoformat(),
             'user_name': query.from_user.first_name or 'Usuário',
             'user_username': query.from_user.username or '',
-            'gateway': gateway_used,
-            'bot_token': current_bot_token  # IMPORTANTE: Armazenar token do bot
-        })
+            'bot_token': bot_token  # CRÍTICO: Armazenar bot_token
+        }
+        
+        # Armazenar localmente
+        pending_payments[user_id] = payment_info
+        
+        # Armazenar no sistema compartilhado
+        from shared_data import add_pending_payment
+        add_pending_payment(user_id, payment_info)
+        
+        logger.info("=" * 60)
+        logger.info("✅ PAGAMENTO CRIADO COM SUCESSO")
+        logger.info(f"Payment ID: {payment_id}")
+        logger.info(f"Bot Token Armazenado: {payment_info['bot_token']}")
+        logger.info(f"Dados Completos: {payment_info}")
+        logger.info("=" * 60)
         
         # Marcar usuário como comprador
         update_user_session(user_id, purchased=True)
@@ -1401,7 +1421,7 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         event_logger.info(f"PIX enviado via {gateway_used}")
         
     except Exception as e:
-        logger.error(f"Erro ao criar pagamento: {e}")
+        logger.error(f"❌ ERRO na create_payment: {str(e)}", exc_info=True)
         try:
             await query.message.reply_text("❌ Erro ao processar pagamento. Tente novamente.")
         except:
@@ -1450,17 +1470,42 @@ async def create_fallback_payment(query, amount, description, user_id):
             await query.answer("❌ Sistema temporariamente indisponível. Tente novamente em alguns minutos.")
 
 async def check_payment_status(query, user_id):
-    """Verifica status do pagamento"""
+    """Verifica status do pagamento e envia link específico"""
     try:
-        if user_id not in pending_payments:
+        logger.info("=" * 60)
+        logger.info("🔍 INICIANDO VERIFICAÇÃO DE PAGAMENTO")
+        logger.info(f"User ID: {user_id}")
+        
+        # Recuperar informações do pagamento
+        payment_info = pending_payments.get(user_id)
+        
+        if not payment_info:
+            logger.warning(f"⚠️ Nenhum pagamento pendente para user {user_id}")
+            # Tentar recuperar do sistema compartilhado
+            from shared_data import get_pending_payment
+            payment_info = get_pending_payment(user_id)
+            
+        if not payment_info:
+            logger.error(f"❌ Pagamento não encontrado em nenhum local!")
             await query.edit_message_text("❌ Nenhum pagamento pendente encontrado.")
             return
         
-        payment_info = pending_payments[user_id]
-        payment_id = payment_info['payment_id']
-        gateway = payment_info.get('gateway', 'pushynpay')  # Default para PushynPay
+        logger.info(f"📦 Payment Info Recuperado: {payment_info}")
         
-        # Verificando status do pagamento
+        # Extrair bot_token
+        bot_token = payment_info.get('bot_token')
+        logger.info(f"🤖 Bot Token: {bot_token}")
+        
+        if not bot_token:
+            logger.error("❌ Bot token não encontrado no payment_info!")
+            logger.error(f"Chaves disponíveis: {list(payment_info.keys())}")
+            # Tentar recuperar de active_bots como fallback
+            if active_bots:
+                bot_token = list(active_bots.keys())[0]
+                logger.warning(f"⚠️ Usando fallback bot_token: {bot_token}")
+        
+        payment_id = payment_info['payment_id']
+        gateway = payment_info.get('gateway', 'pushynpay')
         
         # Se é pagamento manual, simular verificação
         if payment_info.get('manual'):
@@ -1495,8 +1540,17 @@ async def check_payment_status(query, user_id):
             logger.error(f"Gateway desconhecido para verificação: {gateway}")
             status = None
         
+        logger.info(f"📊 Status Retornado: {status}")
+        
+        # Se pagamento confirmado
         if status == 'paid':
-            # Pagamento confirmado
+            logger.info("=" * 60)
+            logger.info("💰 PAGAMENTO CONFIRMADO!")
+            logger.info(f"User ID: {user_id}")
+            logger.info(f"Bot Token: {bot_token}")
+            logger.info("=" * 60)
+            
+            # Exibir mensagem de confirmação
             await query.edit_message_text(f"""🎉 PAGAMENTO CONFIRMADO!
 
 ✅ {payment_info['plan']}
@@ -1507,20 +1561,23 @@ async def check_payment_status(query, user_id):
 
 Obrigado pela compra! 🚀""")
             
-            # Enviar link de acesso liberado com token do bot
-            bot_token = payment_info.get('bot_token')
-            logger.info(f"Enviando link de acesso para usuário {user_id} com bot_token: {bot_token}")
-            await send_access_link(user_id, bot_token)
+            # Enviar link de acesso específico
+            link_sent = await send_access_link(user_id, bot_token)
             
-            # Remover pagamento pendente
-            del pending_payments[user_id]
+            if link_sent:
+                logger.info("✅ Link de acesso enviado com sucesso!")
+            else:
+                logger.error("❌ Falha ao enviar link de acesso!")
             
-            # Atualizar no sistema compartilhado
+            # Limpar pagamento pendente
+            if user_id in pending_payments:
+                del pending_payments[user_id]
             from shared_data import remove_pending_payment, update_stats
             remove_pending_payment(user_id)
             update_stats('confirmed_payments')
             
-            event_logger.info(f"Pagamento confirmado: R$ {payment_info['amount']} via {gateway}")
+            # Adicionar evento de pagamento confirmado
+            add_event('PAYMENT_CONFIRMED', f'Pagamento confirmado: R$ {payment_info["amount"]:.2f} - {payment_info["plan"]}', user_id)
             
         elif status == 'pending':
             # Pagamento pendente - permitir verificação novamente
@@ -1562,13 +1619,16 @@ Obrigado pela compra! 🚀""")
 📋 Plano: {payment_info['plan']}""", reply_markup=reply_markup)
             
     except Exception as e:
-        logger.error(f"Erro ao verificar pagamento: {e}")
+        logger.error(f"❌ ERRO em check_payment_status: {str(e)}", exc_info=True)
         
         # Em caso de erro, também permitir nova verificação
         keyboard = [
             [InlineKeyboardButton("🔄 Verificar Novamente", callback_data=f"verificar_pagamento_{user_id}")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        # Tentar obter payment_info para mostrar valores
+        payment_info = pending_payments.get(user_id, {})
         
         await query.edit_message_text(f"""❌ ERRO AO VERIFICAR PAGAMENTO
 
@@ -1579,8 +1639,8 @@ Obrigado pela compra! 🚀""")
 • Aguarde alguns minutos e tente novamente
 • Se persistir, entre em contato com @seu_usuario
 
-💰 Valor: R$ {payment_info['amount']:.2f}
-📋 Plano: {payment_info['plan']}""", reply_markup=reply_markup)
+💰 Valor: R$ {payment_info.get('amount', 0):.2f}
+📋 Plano: {payment_info.get('plan', 'N/A')}""", reply_markup=reply_markup)
 
 async def send_support_message(query, user_id):
     """Envia mensagem de suporte para problemas de pagamento"""
@@ -1618,52 +1678,105 @@ Obrigado pela paciência! 🙏"""
         await query.edit_message_text("❌ Erro ao processar solicitação de suporte. Tente novamente.")
 
 async def send_access_link(user_id, bot_token=None):
-    """Envia o link de acesso liberado após confirmação do pagamento"""
+    """Envia link de acesso específico do bot"""
     try:
-        logger.info(f"=== INICIANDO ENVIO DE LINK DE ACESSO ===")
+        logger.info("=" * 60)
+        logger.info("🔗 INICIANDO ENVIO DE LINK DE ACESSO")
         logger.info(f"User ID: {user_id}")
-        logger.info(f"Bot Token: {bot_token}")
+        logger.info(f"Bot Token Recebido: {bot_token}")
         
-        # Determinar qual link usar baseado no bot que processou o pagamento
-        access_link = "https://oacessoliberado.shop/vip2"  # Link padrão
+        # Validar bot_token
+        if not bot_token:
+            logger.error("❌ Bot token não fornecido!")
+            if active_bots:
+                bot_token = list(active_bots.keys())[0]
+                logger.warning(f"⚠️ Usando fallback: {bot_token}")
+            else:
+                logger.error("❌ Nenhum bot disponível!")
+                return False
         
-        if bot_token and bot_token in BOT_LINKS:
-            access_link = BOT_LINKS[bot_token]
-            event_logger.info(f"✅ Usando link específico do bot {bot_token[:20]}...: {access_link}")
+        # Buscar link específico do bot
+        specific_link = BOT_LINKS.get(bot_token)
+        
+        if specific_link:
+            logger.info(f"✅ Link específico encontrado: {specific_link}")
+            access_link = specific_link
         else:
-            event_logger.info(f"⚠️ Bot token não encontrado ou inválido: {bot_token}, usando link padrão: {access_link}")
+            logger.warning(f"⚠️ Bot {bot_token} sem link específico")
+            logger.warning(f"Bots disponíveis: {list(BOT_LINKS.keys())}")
+            access_link = "https://oacessoliberado.shop/vip2"  # Link padrão
+            logger.info(f"📌 Usando link padrão: {access_link}")
         
-        access_message = f"""🔓 Para Liberar Seu Acesso
-⬇️Clique aqui⬇️
-
-{access_link}"""
+        # Preparar mensagem
+        message = (
+            "✅ *PAGAMENTO CONFIRMADO!*\n\n"
+            "🎉 Seu acesso foi liberado com sucesso!\n\n"
+            f"🔗 *Link de Acesso:*\n{access_link}\n\n"
+            "⚡ Acesse agora mesmo e aproveite!\n\n"
+            "❓ Dúvidas? Entre em contato com o suporte."
+        )
         
-        logger.info(f"Mensagem a ser enviada: {access_message}")
+        # Tentar enviar por todos os bots ativos
+        message_sent = False
         
-        # Obter bot ativo para enviar mensagem
-        active_bot = None
-        for token, bot_info in active_bots.items():
-            if bot_info['status'] == 'active':
-                active_bot = bot_info['bot']
-                logger.info(f"Bot ativo encontrado: {token[:20]}...")
-                break
+        # Tentar primeiro com o bot específico
+        if bot_token in active_bots:
+            try:
+                bot = active_bots[bot_token]['bot']
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=message,
+                    parse_mode='Markdown'
+                )
+                message_sent = True
+                logger.info(f"✅ Mensagem enviada pelo bot específico: {bot_token}")
+            except Exception as e:
+                logger.error(f"❌ Erro ao enviar pelo bot específico: {str(e)}")
         
-        if active_bot:
-            logger.info(f"Enviando mensagem para user_id: {user_id}")
-            await active_bot.send_message(
-                chat_id=user_id,
-                text=access_message
-            )
-            
-            event_logger.info(f"✅ Link de acesso enviado para usuário {user_id}: {access_link}")
-            add_event('INFO', f'Link de acesso enviado para usuário {user_id}: {access_link}', user_id)
-            logger.info(f"=== LINK DE ACESSO ENVIADO COM SUCESSO ===")
+        # Se não conseguiu, tentar com qualquer bot ativo
+        if not message_sent:
+            for token, bot_info in active_bots.items():
+                try:
+                    bot = bot_info['bot']
+                    await bot.send_message(
+                        chat_id=user_id,
+                        text=message,
+                        parse_mode='Markdown'
+                    )
+                    message_sent = True
+                    logger.info(f"✅ Mensagem enviada pelo bot fallback: {token}")
+                    break
+                except Exception as e:
+                    logger.error(f"❌ Erro ao enviar pelo bot {token}: {str(e)}")
+                    continue
+        
+        if message_sent:
+            logger.info("=" * 60)
+            logger.info("✅ LINK DE ACESSO ENVIADO COM SUCESSO")
+            logger.info(f"User ID: {user_id}")
+            logger.info(f"Bot Token: {bot_token}")
+            logger.info(f"Link Enviado: {access_link}")
+            logger.info("=" * 60)
+            return True
         else:
-            logger.error("❌ Nenhum bot ativo encontrado para enviar link de acesso")
+            logger.error("❌ FALHA TOTAL - Nenhum bot conseguiu enviar a mensagem")
+            return False
         
     except Exception as e:
-        logger.error(f"❌ Erro ao enviar link de acesso: {e}")
-        add_event('ERROR', f'Erro ao enviar link de acesso: {e}', user_id)
+        logger.error(f"❌ ERRO CRÍTICO em send_access_link: {str(e)}", exc_info=True)
+        return False
+
+def debug_payment_state(user_id):
+    """Função helper para debug do estado do pagamento"""
+    logger.info("=" * 60)
+    logger.info("🔍 DEBUG - ESTADO DO PAGAMENTO")
+    logger.info(f"User ID: {user_id}")
+    logger.info(f"Em pending_payments: {user_id in pending_payments}")
+    if user_id in pending_payments:
+        logger.info(f"Dados: {pending_payments[user_id]}")
+    logger.info(f"Bots ativos: {list(active_bots.keys())}")
+    logger.info(f"Links configurados: {list(BOT_LINKS.keys())}")
+    logger.info("=" * 60)
 
 def start_downsell_timers(user_id):
     """Inicia timers de downsell para um usuário"""
