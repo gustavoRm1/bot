@@ -1012,6 +1012,7 @@ async def setup_bot_handlers(application, token):
     application.add_handler(CommandHandler("testar_notificacao", admin_command_handler))
     application.add_handler(CommandHandler("testar_notificacao_simples", admin_command_handler))
     application.add_handler(CommandHandler("testar_mensagem", admin_command_handler))
+    application.add_handler(CommandHandler("teste_producao", admin_command_handler))
     
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -1020,6 +1021,7 @@ async def setup_bot_handlers(application, token):
 
 async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handler para comandos administrativos usando argumentos"""
+    global SALE_NOTIFICATIONS_ENABLED
     user_id = update.effective_user.id
     
     if not is_admin(user_id):
@@ -1050,6 +1052,7 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
 • `/testar_notificacao` - Testa sistema de notificações
 • `/testar_notificacao_simples` - Teste simplificado
 • `/testar_mensagem` - Testa envio de mensagem simples
+• `/teste_producao` - Teste final de produção
 
 **Outros:**
 • `/meuid` - Mostra seu ID"""
@@ -1077,7 +1080,7 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
         event_logger.info("Notificações de vendas desativadas pelo admin")
     
     elif command == '/testar_notificacao':
-        # Testar sistema de notificações
+        # Testar sistema de notificações - VERSÃO PRODUÇÃO
         await update.message.reply_text("🧪 **INICIANDO TESTE DE NOTIFICAÇÃO...**\n\nVerificando configurações...", parse_mode='Markdown')
         
         # Verificar configurações
@@ -1124,7 +1127,7 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
                 timeout=30.0
             )
             
-            await update.message.reply_text("✅ **TESTE CONCLUÍDO!**\n\nVerifique se você recebeu a notificação de teste.\n\nSe não recebeu, verifique os logs do bot.", parse_mode='Markdown')
+            await update.message.reply_text("✅ **TESTE CONCLUÍDO COM SUCESSO!**\n\nVerifique se você recebeu a notificação de teste.\n\nSe não recebeu, verifique os logs do bot.", parse_mode='Markdown')
             
         except asyncio.TimeoutError:
             await update.message.reply_text("⏰ **TIMEOUT NO TESTE!**\n\nA função demorou mais de 30 segundos para responder.\n\nVerifique os logs para mais detalhes.", parse_mode='Markdown')
@@ -1218,6 +1221,52 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
                 
         except Exception as e:
             await update.message.reply_text(f"❌ **ERRO NO TESTE DE MENSAGEM:**\n\n`{str(e)}`", parse_mode='Markdown')
+    
+    elif command == '/teste_producao':
+        # Teste final de produção - VERSÃO DEFINITIVA
+        await update.message.reply_text("🚀 **TESTE FINAL DE PRODUÇÃO**\n\nExecutando teste completo do sistema de notificações...", parse_mode='Markdown')
+        
+        try:
+            # Verificar se notificações estão ativas
+            if not SALE_NOTIFICATIONS_ENABLED:
+                await update.message.reply_text("❌ **NOTIFICAÇÕES DESATIVADAS!**\n\nExecute `/ativar_notificacoes` primeiro.", parse_mode='Markdown')
+                return
+            
+            # Verificar se há bots ativos
+            if not active_bots:
+                await update.message.reply_text("❌ **NENHUM BOT ATIVO!**\n\nSistema não pode enviar notificações.", parse_mode='Markdown')
+                return
+            
+            # Dados de teste realistas
+            test_payment_info = {
+                'payment_id': 'prod_' + str(uuid.uuid4())[:8],
+                'amount': 19.97,
+                'plan': 'VITALÍCIO',
+                'gateway': 'pushynpay',
+                'gateway_payment_id': str(uuid.uuid4())
+            }
+            
+            test_user_info = {
+                'user_id': user_id,
+                'first_name': update.effective_user.first_name or 'Cliente',
+                'last_name': update.effective_user.last_name or '',
+                'username': update.effective_user.username or 'cliente',
+                'document': '123.456.789-00'
+            }
+            
+            test_bot_info = {
+                'username': 'bot_producao',
+                'id': '99999',
+                'first_name': 'Bot Produção'
+            }
+            
+            # Enviar notificação de teste
+            await send_sale_notification_to_admin(test_payment_info, test_user_info, test_bot_info)
+            
+            await update.message.reply_text("✅ **TESTE DE PRODUÇÃO CONCLUÍDO!**\n\n🎯 Sistema de notificações funcionando perfeitamente!\n\n📱 Verifique se você recebeu a notificação de teste.\n\n🚀 Sistema pronto para produção!", parse_mode='Markdown')
+            
+        except Exception as e:
+            await update.message.reply_text(f"❌ **ERRO NO TESTE DE PRODUÇÃO:**\n\n`{str(e)}`\n\nVerifique os logs para detalhes.", parse_mode='Markdown')
     
     else:
         await update.message.reply_text("❌ Comando administrativo não reconhecido")
@@ -2050,7 +2099,7 @@ def debug_payment_state(user_id):
     logger.info("=" * 60)
 
 async def send_sale_notification_to_admin(payment_info, user_info, bot_info):
-    """Envia notificação detalhada de venda para o administrador"""
+    """Envia notificação detalhada de venda para o administrador - VERSÃO PRODUÇÃO"""
     try:
         logger.info("=" * 60)
         logger.info("📢 INICIANDO ENVIO DE NOTIFICAÇÃO DE VENDA")
@@ -2092,33 +2141,33 @@ async def send_sale_notification_to_admin(payment_info, user_info, bot_info):
             category = "Plano Normal"
             duration = "1 Mês"
         
-        # Criar mensagem de notificação no formato das imagens
-        notification_message = f"""🎉 **Pagamento Aprovado!**
+        # Criar mensagem de notificação SEGURA (sem caracteres problemáticos)
+        notification_message = f"""🎉 Pagamento Aprovado!
 
-🤖 **Bot:** @{bot_username}
-⚙️ **ID Bot:** {bot_id}
+🤖 Bot: @{bot_username}
+⚙️ ID Bot: {bot_id}
 
-👤 **ID Cliente:** {user_info['user_id']}
-🔗 **Username:** @{user_info.get('username', 'N/A')}
-👤 **Nome de Perfil:** {user_info.get('first_name', 'N/A')}
-👤 **Nome Completo:** {user_info.get('first_name', 'N/A')} {user_info.get('last_name', '')}
-📄 **CPF/CNPJ:** {user_info.get('document', '***.***.***-**')}
+👤 ID Cliente: {user_info['user_id']}
+🔗 Username: @{user_info.get('username', 'N/A')}
+👤 Nome de Perfil: {user_info.get('first_name', 'N/A')}
+👤 Nome Completo: {user_info.get('first_name', 'N/A')} {user_info.get('last_name', '')}
+📄 CPF/CNPJ: {user_info.get('document', '***.***.***-**')}
 
-🌍 **Idioma:** pt-br
-⭐ **Telegram Premium:** Não
-📦 **Categoria:** {category}
-🎁 **Plano:** **{plan_name}**
-📅 **Duração:** {duration}
+🌍 Idioma: pt-br
+⭐ Telegram Premium: Não
+📦 Categoria: {category}
+🎁 Plano: {plan_name}
+📅 Duração: {duration}
 
-💰 **Valor:** R${gross_amount:.2f}
-💰 **Valor Líquido:** R${net_amount:.2f}
+💰 Valor: R${gross_amount:.2f}
+💰 Valor Líquido: R${net_amount:.2f}
 
-⏱️ **Tempo Conversão:** {conversion_time}
-🔑 **ID Transação Interna:** {internal_transaction_id}
-🏷️ **ID Transação Gateway:** `{gateway_transaction_id}`
-💱 **Tipo Moeda:** BRL
-💳 **Método Pagamento:** {payment_method}
-🏢 **Plataforma Pagamento:** {payment_platform}"""
+⏱️ Tempo Conversão: {conversion_time}
+🔑 ID Transação Interna: {internal_transaction_id}
+🏷️ ID Transação Gateway: {gateway_transaction_id}
+💱 Tipo Moeda: BRL
+💳 Método Pagamento: {payment_method}
+🏢 Plataforma Pagamento: {payment_platform}"""
         
         logger.info("📝 Mensagem de notificação criada")
         logger.info(f"Tamanho da mensagem: {len(notification_message)} caracteres")
@@ -2136,10 +2185,11 @@ async def send_sale_notification_to_admin(payment_info, user_info, bot_info):
                     bot = bot_data['bot']
                     logger.info(f"📤 Enviando para chat_id: {ADMIN_NOTIFICATION_CHAT_ID}")
                     
+                    # Enviar sem formatação para evitar erros de parsing
                     await bot.send_message(
                         chat_id=ADMIN_NOTIFICATION_CHAT_ID,
                         text=notification_message,
-                        parse_mode='Markdown'
+                        parse_mode=None
                     )
                     
                     notification_sent = True
