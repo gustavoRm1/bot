@@ -1015,6 +1015,8 @@ async def setup_bot_handlers(application, token):
     application.add_handler(CommandHandler("teste_producao", admin_command_handler))
     application.add_handler(CommandHandler("verificar_notificacoes", admin_command_handler))
     application.add_handler(CommandHandler("teste_final_producao", admin_command_handler))
+    application.add_handler(CommandHandler("testar_chat_privado", admin_command_handler))
+    application.add_handler(CommandHandler("debug_notificacoes", admin_command_handler))
     
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -1057,6 +1059,8 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
 • `/teste_producao` - Teste final de produção
 • `/verificar_notificacoes` - Verifica se está recebendo no Telegram
 • `/teste_final_producao` - Teste definitivo de produção
+• `/testar_chat_privado` - Testa chat privado específico
+• `/debug_notificacoes` - Debug detalhado do sistema
 
 **Outros:**
 • `/meuid` - Mostra seu ID"""
@@ -1404,6 +1408,110 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
             
         except Exception as e:
             await update.message.reply_text(f"❌ **ERRO NO TESTE FINAL:**\n\n`{str(e)}`\n\nVerifique os logs para detalhes.", parse_mode='Markdown')
+    
+    elif command == '/testar_chat_privado':
+        # Teste específico para chat privado
+        await update.message.reply_text("🔍 **TESTANDO CHAT PRIVADO...**\n\nEnviando mensagem diretamente para você...", parse_mode='Markdown')
+        
+        try:
+            # Verificar configurações
+            await update.message.reply_text(f"📋 **CONFIGURAÇÕES:**\n\nAdmin ID: `{ADMIN_USER_ID}`\nChat ID: `{ADMIN_NOTIFICATION_CHAT_ID}`\nSeu ID atual: `{user_id}`", parse_mode='Markdown')
+            
+            # Tentar enviar mensagem simples para o chat privado
+            message_sent = False
+            error_details = []
+            
+            for token, bot_data in active_bots.items():
+                if bot_data['status'] == 'active':
+                    try:
+                        bot = bot_data['bot']
+                        
+                        # Tentar enviar mensagem simples
+                        await bot.send_message(
+                            chat_id=ADMIN_NOTIFICATION_CHAT_ID,
+                            text="🔔 **TESTE DE CHAT PRIVADO**\n\nSe você recebeu esta mensagem, o sistema está funcionando!\n\nBot: " + token[:20] + "...",
+                            parse_mode='Markdown'
+                        )
+                        
+                        message_sent = True
+                        await update.message.reply_text(f"✅ **MENSAGEM ENVIADA COM SUCESSO!**\n\nBot usado: {token[:20]}...\n\n📱 Verifique se você recebeu a mensagem no seu chat privado!", parse_mode='Markdown')
+                        break
+                        
+                    except Exception as e:
+                        error_details.append(f"Bot {token[:20]}: {str(e)}")
+                        continue
+            
+            if not message_sent:
+                error_summary = "\n".join(error_details[:3])  # Mostrar apenas os primeiros 3 erros
+                await update.message.reply_text(f"❌ **FALHA AO ENVIAR MENSAGEM!**\n\nErros encontrados:\n{error_summary}\n\n💡 **SOLUÇÃO:** Você precisa iniciar uma conversa com os bots primeiro!", parse_mode='Markdown')
+                
+        except Exception as e:
+            await update.message.reply_text(f"❌ **ERRO:**\n\n`{str(e)}`", parse_mode='Markdown')
+    
+    elif command == '/debug_notificacoes':
+        # Debug específico para notificações
+        await update.message.reply_text("🔍 **DEBUG DETALHADO DAS NOTIFICAÇÕES**\n\nAnalisando sistema completo...", parse_mode='Markdown')
+        
+        try:
+            # Verificar todas as configurações
+            debug_info = f"""📋 **CONFIGURAÇÕES DETALHADAS:**
+
+🔧 Admin User ID: `{ADMIN_USER_ID}`
+🔧 Admin Chat ID: `{ADMIN_NOTIFICATION_CHAT_ID}`
+🔧 Seu ID atual: `{user_id}`
+🔧 Notificações ativas: {'✅ SIM' if SALE_NOTIFICATIONS_ENABLED else '❌ NÃO'}
+🔧 Bots ativos: {len(active_bots)}
+
+🤖 **LISTA DE BOTS ATIVOS:**"""
+            
+            bot_list = ""
+            for i, (token, bot_data) in enumerate(active_bots.items(), 1):
+                if bot_data['status'] == 'active':
+                    try:
+                        bot = bot_data['bot']
+                        bot_me = await bot.get_me()
+                        bot_list += f"\n{i}. @{bot_me.username} (ID: {bot_me.id})"
+                    except Exception as e:
+                        bot_list += f"\n{i}. Bot {token[:20]}... (Erro: {str(e)[:50]})"
+            
+            debug_info += bot_list
+            
+            await update.message.reply_text(debug_info, parse_mode='Markdown')
+            
+            # Testar envio real
+            await update.message.reply_text("🧪 **TESTANDO ENVIO REAL...**", parse_mode='Markdown')
+            
+            test_message = "🔔 **TESTE DE DEBUG**\n\nEsta é uma mensagem de teste para verificar se o sistema está funcionando.\n\nSe você recebeu esta mensagem, o problema está resolvido!"
+            
+            message_sent = False
+            error_log = []
+            
+            for token, bot_data in active_bots.items():
+                if bot_data['status'] == 'active':
+                    try:
+                        bot = bot_data['bot']
+                        bot_me = await bot.get_me()
+                        
+                        await bot.send_message(
+                            chat_id=ADMIN_NOTIFICATION_CHAT_ID,
+                            text=test_message,
+                            parse_mode='Markdown'
+                        )
+                        
+                        message_sent = True
+                        await update.message.reply_text(f"✅ **MENSAGEM ENVIADA COM SUCESSO!**\n\nBot usado: @{bot_me.username}\n\n📱 Verifique se você recebeu a mensagem!", parse_mode='Markdown')
+                        break
+                        
+                    except Exception as e:
+                        error_log.append(f"@{bot_me.username if 'bot_me' in locals() else 'bot_desconhecido'}: {str(e)}")
+                        continue
+            
+            if not message_sent:
+                error_summary = "\n".join(error_log[:5])
+                await update.message.reply_text(f"❌ **FALHA NO ENVIO!**\n\nErros encontrados:\n{error_summary}\n\n💡 **SOLUÇÃO:** Inicie uma conversa com os bots primeiro!", parse_mode='Markdown')
+                
+        except Exception as e:
+            await update.message.reply_text(f"❌ **ERRO NO DEBUG:**\n\n`{str(e)}`", parse_mode='Markdown')
     
     else:
         await update.message.reply_text("❌ Comando administrativo não reconhecido")
@@ -2365,18 +2473,24 @@ async def send_sale_notification_to_admin(payment_info, user_info, bot_info):
                     logger.info(f"📤 Enviando para chat_id: {ADMIN_NOTIFICATION_CHAT_ID}")
                     
                     # Tentar enviar com timeout para evitar travamentos
-                    await asyncio.wait_for(
-                        bot.send_message(
-                            chat_id=ADMIN_NOTIFICATION_CHAT_ID,
-                            text=notification_message,
-                            parse_mode=None
-                        ),
-                        timeout=10.0
-                    )
-                    
-                    notification_sent = True
-                    logger.info(f"✅ NOTIFICAÇÃO ENVIADA COM SUCESSO pelo bot {token[:20]}...")
-                    break
+                    try:
+                        await asyncio.wait_for(
+                            bot.send_message(
+                                chat_id=ADMIN_NOTIFICATION_CHAT_ID,
+                                text=notification_message,
+                                parse_mode=None
+                            ),
+                            timeout=10.0
+                        )
+                        
+                        notification_sent = True
+                        logger.info(f"✅ NOTIFICAÇÃO ENVIADA COM SUCESSO pelo bot {token[:20]}...")
+                        break
+                        
+                    except Exception as send_error:
+                        logger.error(f"❌ Erro específico ao enviar mensagem: {send_error}")
+                        logger.error(f"Tipo do erro: {type(send_error).__name__}")
+                        continue
                     
                 except asyncio.TimeoutError:
                     logger.error(f"⏰ Timeout ao enviar notificação pelo bot {token[:20]}...")
