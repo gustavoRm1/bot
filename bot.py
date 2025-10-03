@@ -1010,6 +1010,7 @@ async def setup_bot_handlers(application, token):
     application.add_handler(CommandHandler("ativar_notificacoes", admin_command_handler))
     application.add_handler(CommandHandler("desativar_notificacoes", admin_command_handler))
     application.add_handler(CommandHandler("testar_notificacao", admin_command_handler))
+    application.add_handler(CommandHandler("testar_mensagem", admin_command_handler))
     
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -1046,6 +1047,7 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
 • `/ativar_notificacoes` - Ativa notificações
 • `/desativar_notificacoes` - Desativa notificações
 • `/testar_notificacao` - Testa sistema de notificações
+• `/testar_mensagem` - Testa envio de mensagem simples
 
 **Outros:**
 • `/meuid` - Mostra seu ID"""
@@ -1074,6 +1076,19 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
     
     elif command == '/testar_notificacao':
         # Testar sistema de notificações
+        await update.message.reply_text("🧪 **INICIANDO TESTE DE NOTIFICAÇÃO...**\n\nVerificando configurações...", parse_mode='Markdown')
+        
+        # Verificar configurações
+        debug_info = f"""🔍 **DEBUG - CONFIGURAÇÕES:**
+
+📢 Notificações ativas: {'✅ SIM' if SALE_NOTIFICATIONS_ENABLED else '❌ NÃO'}
+👤 Admin Chat ID: `{ADMIN_NOTIFICATION_CHAT_ID}`
+🤖 Bots ativos: {len(active_bots)}
+
+📋 **Dados do teste:**"""
+        
+        await update.message.reply_text(debug_info, parse_mode='Markdown')
+        
         test_payment_info = {
             'payment_id': 'test_' + str(uuid.uuid4())[:8],
             'amount': 19.97,
@@ -1096,8 +1111,42 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
             'first_name': 'Bot Teste'
         }
         
-        await send_sale_notification_to_admin(test_payment_info, test_user_info, test_bot_info)
-        await update.message.reply_text("🧪 **TESTE DE NOTIFICAÇÃO ENVIADO!**\n\nVerifique se você recebeu a notificação de teste.", parse_mode='Markdown')
+        # Tentar enviar notificação
+        try:
+            await send_sale_notification_to_admin(test_payment_info, test_user_info, test_bot_info)
+            await update.message.reply_text("✅ **TESTE CONCLUÍDO!**\n\nVerifique se você recebeu a notificação de teste.\n\nSe não recebeu, verifique os logs do bot.", parse_mode='Markdown')
+        except Exception as e:
+            await update.message.reply_text(f"❌ **ERRO NO TESTE:**\n\n`{str(e)}`\n\nVerifique os logs para mais detalhes.", parse_mode='Markdown')
+    
+    elif command == '/testar_mensagem':
+        # Teste simples de envio de mensagem
+        await update.message.reply_text("🧪 **TESTANDO ENVIO DE MENSAGEM SIMPLES...**", parse_mode='Markdown')
+        
+        try:
+            # Tentar enviar uma mensagem simples para o admin
+            message_sent = False
+            
+            for token, bot_data in active_bots.items():
+                if bot_data['status'] == 'active':
+                    try:
+                        bot = bot_data['bot']
+                        await bot.send_message(
+                            chat_id=ADMIN_NOTIFICATION_CHAT_ID,
+                            text="🧪 **TESTE DE MENSAGEM SIMPLES**\n\nSe você recebeu esta mensagem, o bot consegue enviar notificações para você!",
+                            parse_mode='Markdown'
+                        )
+                        message_sent = True
+                        await update.message.reply_text(f"✅ **MENSAGEM SIMPLES ENVIADA!**\n\nBot usado: {token[:20]}...\n\nVerifique se você recebeu a mensagem de teste.", parse_mode='Markdown')
+                        break
+                    except Exception as e:
+                        logger.error(f"Erro ao enviar mensagem simples: {e}")
+                        continue
+            
+            if not message_sent:
+                await update.message.reply_text("❌ **FALHA AO ENVIAR MENSAGEM SIMPLES!**\n\nNenhum bot conseguiu enviar a mensagem.", parse_mode='Markdown')
+                
+        except Exception as e:
+            await update.message.reply_text(f"❌ **ERRO NO TESTE DE MENSAGEM:**\n\n`{str(e)}`", parse_mode='Markdown')
     
     else:
         await update.message.reply_text("❌ Comando administrativo não reconhecido")
@@ -1921,13 +1970,17 @@ def debug_payment_state(user_id):
 async def send_sale_notification_to_admin(payment_info, user_info, bot_info):
     """Envia notificação detalhada de venda para o administrador"""
     try:
-        if not SALE_NOTIFICATIONS_ENABLED:
-            return
-        
         logger.info("=" * 60)
-        logger.info("📢 ENVIANDO NOTIFICAÇÃO DE VENDA PARA ADMIN")
+        logger.info("📢 INICIANDO ENVIO DE NOTIFICAÇÃO DE VENDA")
+        logger.info(f"SALE_NOTIFICATIONS_ENABLED: {SALE_NOTIFICATIONS_ENABLED}")
+        logger.info(f"ADMIN_NOTIFICATION_CHAT_ID: {ADMIN_NOTIFICATION_CHAT_ID}")
+        logger.info(f"Active bots: {len(active_bots)}")
         logger.info(f"Payment Info: {payment_info}")
         logger.info("=" * 60)
+        
+        if not SALE_NOTIFICATIONS_ENABLED:
+            logger.warning("⚠️ Notificações de vendas estão DESATIVADAS!")
+            return
         
         # Obter informações do bot
         bot_username = bot_info.get('username', 'bot_desconhecido')
@@ -1985,33 +2038,56 @@ async def send_sale_notification_to_admin(payment_info, user_info, bot_info):
 💳 **Método Pagamento:** {payment_method}
 🏢 **Plataforma Pagamento:** {payment_platform}"""
         
+        logger.info("📝 Mensagem de notificação criada")
+        logger.info(f"Tamanho da mensagem: {len(notification_message)} caracteres")
+        
         # Tentar enviar notificação por todos os bots ativos
         notification_sent = False
+        attempts = 0
         
         for token, bot_data in active_bots.items():
             if bot_data['status'] == 'active':
+                attempts += 1
+                logger.info(f"🔄 Tentativa {attempts}: Enviando via bot {token[:20]}...")
+                
                 try:
                     bot = bot_data['bot']
+                    logger.info(f"📤 Enviando para chat_id: {ADMIN_NOTIFICATION_CHAT_ID}")
+                    
                     await bot.send_message(
                         chat_id=ADMIN_NOTIFICATION_CHAT_ID,
                         text=notification_message,
                         parse_mode='Markdown'
                     )
+                    
                     notification_sent = True
-                    logger.info(f"✅ Notificação enviada pelo bot {token[:20]}...")
+                    logger.info(f"✅ NOTIFICAÇÃO ENVIADA COM SUCESSO pelo bot {token[:20]}...")
                     break
+                    
                 except Exception as e:
                     logger.error(f"❌ Erro ao enviar notificação pelo bot {token[:20]}...: {e}")
+                    logger.error(f"Tipo do erro: {type(e).__name__}")
                     continue
         
         if notification_sent:
+            logger.info("=" * 60)
             logger.info("✅ NOTIFICAÇÃO DE VENDA ENVIADA COM SUCESSO!")
+            logger.info(f"Valor: R$ {gross_amount:.2f}")
+            logger.info(f"Plano: {plan_name}")
+            logger.info("=" * 60)
             event_logger.info(f"Notificação de venda enviada: R$ {gross_amount:.2f} - {plan_name}")
         else:
-            logger.error("❌ FALHA AO ENVIAR NOTIFICAÇÃO DE VENDA!")
+            logger.error("=" * 60)
+            logger.error("❌ FALHA TOTAL AO ENVIAR NOTIFICAÇÃO DE VENDA!")
+            logger.error(f"Tentativas realizadas: {attempts}")
+            logger.error(f"Bots ativos: {len(active_bots)}")
+            logger.error("=" * 60)
             
     except Exception as e:
-        logger.error(f"❌ ERRO CRÍTICO ao enviar notificação de venda: {e}", exc_info=True)
+        logger.error("=" * 60)
+        logger.error(f"❌ ERRO CRÍTICO ao enviar notificação de venda: {e}")
+        logger.error(f"Tipo do erro: {type(e).__name__}")
+        logger.error("=" * 60, exc_info=True)
 
 def start_downsell_timers(user_id):
     """Inicia timers de downsell para um usuário"""
