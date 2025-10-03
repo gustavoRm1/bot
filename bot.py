@@ -1013,6 +1013,7 @@ async def setup_bot_handlers(application, token):
     application.add_handler(CommandHandler("testar_notificacao_simples", admin_command_handler))
     application.add_handler(CommandHandler("testar_mensagem", admin_command_handler))
     application.add_handler(CommandHandler("teste_producao", admin_command_handler))
+    application.add_handler(CommandHandler("verificar_notificacoes", admin_command_handler))
     
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -1053,6 +1054,7 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
 • `/testar_notificacao_simples` - Teste simplificado
 • `/testar_mensagem` - Testa envio de mensagem simples
 • `/teste_producao` - Teste final de produção
+• `/verificar_notificacoes` - Verifica se está recebendo no Telegram
 
 **Outros:**
 • `/meuid` - Mostra seu ID"""
@@ -1267,6 +1269,67 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
             
         except Exception as e:
             await update.message.reply_text(f"❌ **ERRO NO TESTE DE PRODUÇÃO:**\n\n`{str(e)}`\n\nVerifique os logs para detalhes.", parse_mode='Markdown')
+    
+    elif command == '/verificar_notificacoes':
+        # Verificar se você está recebendo notificações no Telegram
+        await update.message.reply_text("🔍 **VERIFICANDO NOTIFICAÇÕES NO TELEGRAM...**\n\nEnviando notificação de teste diretamente para você...", parse_mode='Markdown')
+        
+        try:
+            # Verificar configurações
+            await update.message.reply_text(f"📋 **CONFIGURAÇÕES:**\n\nAdmin ID: `{ADMIN_USER_ID}`\nChat ID: `{ADMIN_NOTIFICATION_CHAT_ID}`\nNotificações: {'✅ ATIVAS' if SALE_NOTIFICATIONS_ENABLED else '❌ DESATIVAS'}", parse_mode='Markdown')
+            
+            # Enviar notificação de teste diretamente
+            test_message = """🎉 Pagamento Aprovado!
+
+🤖 Bot: @teste_bot
+⚙️ ID Bot: 12345
+
+👤 ID Cliente: 7676333385
+🔗 Username: @robertinhaop1
+👤 Nome de Perfil: Roberta
+👤 Nome Completo: Roberta Teste
+📄 CPF/CNPJ: 123.456.789-00
+
+🌍 Idioma: pt-br
+⭐ Telegram Premium: Não
+📦 Categoria: Plano Normal
+🎁 Plano: VITALÍCIO
+📅 Duração: Vitalício
+
+💰 Valor: R$19.97
+💰 Valor Líquido: R$18.77
+
+⏱️ Tempo Conversão: 0d 0h 2m 15s
+🔑 ID Transação Interna: test123
+🏷️ ID Transação Gateway: test-uuid-123
+💱 Tipo Moeda: BRL
+💳 Método Pagamento: pix
+🏢 Plataforma Pagamento: pushynpay"""
+            
+            # Tentar enviar para todos os bots
+            message_sent = False
+            
+            for token, bot_data in active_bots.items():
+                if bot_data['status'] == 'active':
+                    try:
+                        bot = bot_data['bot']
+                        await bot.send_message(
+                            chat_id=ADMIN_NOTIFICATION_CHAT_ID,
+                            text=test_message,
+                            parse_mode=None
+                        )
+                        message_sent = True
+                        await update.message.reply_text(f"✅ **NOTIFICAÇÃO ENVIADA COM SUCESSO!**\n\nBot usado: {token[:20]}...\n\n📱 Verifique se você recebeu a notificação acima no seu chat!", parse_mode='Markdown')
+                        break
+                    except Exception as e:
+                        logger.error(f"Erro ao enviar notificação: {e}")
+                        continue
+            
+            if not message_sent:
+                await update.message.reply_text("❌ **FALHA AO ENVIAR NOTIFICAÇÃO!**\n\nNenhum bot conseguiu enviar a mensagem.", parse_mode='Markdown')
+                
+        except Exception as e:
+            await update.message.reply_text(f"❌ **ERRO:**\n\n`{str(e)}`", parse_mode='Markdown')
     
     else:
         await update.message.reply_text("❌ Comando administrativo não reconhecido")
