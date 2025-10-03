@@ -137,6 +137,10 @@ pending_payments = {}  # {user_id: {'payment_id': str, 'amount': float, 'plan': 
 # Rate limiting para verificação PushynPay (conforme documentação: 1 minuto entre consultas)
 pushynpay_last_check = {}  # {payment_id: timestamp}
 
+# Rate limiting para verificação de pagamento (evitar cliques muito rápidos)
+payment_check_cooldown = {}  # {user_id: timestamp}
+PAYMENT_CHECK_COOLDOWN = 3  # 3 segundos entre verificações
+
 # Sistema multi-bot com controle de shutdown
 active_bots = {}  # {token: {'application': app, 'bot': bot, 'status': 'active'|'failed'}}
 bot_rotation_index = 0
@@ -911,6 +915,9 @@ async def setup_bot_handlers(application, token):
         user = update.effective_user
         user_id = user.id
         
+        # CRÍTICO: Obter o token do bot atual que está processando a requisição
+        current_bot_token = token  # Usar o token do bot atual
+        
         # Verificar rate limiting inteligente
         if not check_rate_limit(user_id, "button"):
             # Usuário em cooldown
@@ -925,13 +932,13 @@ async def setup_bot_handlers(application, token):
             # Order bump para mensal
             await send_order_bump_mensal(query)
         elif query.data == "aceitar_bonus":
-            await create_payment(query, 32.87, "VITALÍCIO + SALA VERMELHA", user_id, token)
+            await create_payment(query, 32.87, "VITALÍCIO + SALA VERMELHA", user_id, current_bot_token)
         elif query.data == "nao_quero_bonus":
-            await create_payment(query, 19.97, "VITALÍCIO", user_id, token)
+            await create_payment(query, 19.97, "VITALÍCIO", user_id, current_bot_token)
         elif query.data == "aceitar_bonus_mensal":
-            await create_payment(query, 27.87, "1 MÊS + PACOTE SOMBRIO", user_id, token)
+            await create_payment(query, 27.87, "1 MÊS + PACOTE SOMBRIO", user_id, current_bot_token)
         elif query.data == "nao_quero_bonus_mensal":
-            await create_payment(query, 14.97, "1 MÊS", user_id, token)
+            await create_payment(query, 14.97, "1 MÊS", user_id, current_bot_token)
         elif query.data.startswith("verificar_pagamento"):
             # Extrair user_id do callback_data
             if "_" in query.data:
@@ -1472,6 +1479,18 @@ async def create_fallback_payment(query, amount, description, user_id):
 async def check_payment_status(query, user_id):
     """Verifica status do pagamento e envia link específico"""
     try:
+        # Verificar rate limiting para evitar cliques muito rápidos
+        current_time = time.time()
+        if user_id in payment_check_cooldown:
+            time_since_last_check = current_time - payment_check_cooldown[user_id]
+            if time_since_last_check < PAYMENT_CHECK_COOLDOWN:
+                remaining_time = PAYMENT_CHECK_COOLDOWN - time_since_last_check
+                await query.answer(f"⏳ Aguarde {remaining_time:.0f}s para verificar novamente")
+                return
+        
+        # Registrar timestamp da verificação
+        payment_check_cooldown[user_id] = current_time
+        
         logger.info("=" * 60)
         logger.info("🔍 INICIANDO VERIFICAÇÃO DE PAGAMENTO")
         logger.info(f"User ID: {user_id}")
@@ -1586,7 +1605,7 @@ Obrigado pela compra! 🚀""")
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
-            await query.edit_message_text(f"""⏳ PAGAMENTO AINDA NÃO CONFIRMADO
+            pending_message = f"""⏳ PAGAMENTO AINDA NÃO CONFIRMADO
 
 🔄 Aguarde alguns minutos e clique em "Verificar Novamente"
 
@@ -1594,7 +1613,17 @@ Obrigado pela compra! 🚀""")
 ⏰ Você pode verificar quantas vezes quiser até ser autorizado
 
 💰 Valor: R$ {payment_info['amount']:.2f}
-📋 Plano: {payment_info['plan']}""", reply_markup=reply_markup)
+📋 Plano: {payment_info['plan']}"""
+            
+            try:
+                await query.edit_message_text(pending_message, reply_markup=reply_markup)
+            except Exception as edit_error:
+                if "Message is not modified" in str(edit_error):
+                    logger.info("Mensagem já está atualizada, ignorando erro de modificação")
+                    await query.answer("⏳ Pagamento ainda pendente...")
+                else:
+                    logger.error(f"Erro ao editar mensagem: {edit_error}")
+                    await query.answer("❌ Erro ao atualizar mensagem")
             
         else:
             # Pagamento não encontrado ou erro - permitir nova verificação
@@ -1604,7 +1633,7 @@ Obrigado pela compra! 🚀""")
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
-            await query.edit_message_text(f"""❌ PAGAMENTO NÃO IDENTIFICADO
+            not_found_message = f"""❌ PAGAMENTO NÃO IDENTIFICADO
 
 🔄 Clique em "Verificar Novamente" para tentar mais uma vez
 
@@ -1616,7 +1645,17 @@ Obrigado pela compra! 🚀""")
 📞 Se o problema persistir, clique em "Contatar Suporte"
 
 💰 Valor: R$ {payment_info['amount']:.2f}
-📋 Plano: {payment_info['plan']}""", reply_markup=reply_markup)
+📋 Plano: {payment_info['plan']}"""
+            
+            try:
+                await query.edit_message_text(not_found_message, reply_markup=reply_markup)
+            except Exception as edit_error:
+                if "Message is not modified" in str(edit_error):
+                    logger.info("Mensagem já está atualizada, ignorando erro de modificação")
+                    await query.answer("❌ Pagamento não identificado...")
+                else:
+                    logger.error(f"Erro ao editar mensagem: {edit_error}")
+                    await query.answer("❌ Erro ao atualizar mensagem")
             
     except Exception as e:
         logger.error(f"❌ ERRO em check_payment_status: {str(e)}", exc_info=True)
@@ -1630,7 +1669,7 @@ Obrigado pela compra! 🚀""")
         # Tentar obter payment_info para mostrar valores
         payment_info = pending_payments.get(user_id, {})
         
-        await query.edit_message_text(f"""❌ ERRO AO VERIFICAR PAGAMENTO
+        error_message = f"""❌ ERRO AO VERIFICAR PAGAMENTO
 
 🔄 Clique em "Verificar Novamente" para tentar mais uma vez
 
@@ -1640,7 +1679,17 @@ Obrigado pela compra! 🚀""")
 • Se persistir, entre em contato com @seu_usuario
 
 💰 Valor: R$ {payment_info.get('amount', 0):.2f}
-📋 Plano: {payment_info.get('plan', 'N/A')}""", reply_markup=reply_markup)
+📋 Plano: {payment_info.get('plan', 'N/A')}"""
+        
+        try:
+            await query.edit_message_text(error_message, reply_markup=reply_markup)
+        except Exception as edit_error:
+            if "Message is not modified" in str(edit_error):
+                logger.info("Mensagem já está atualizada, ignorando erro de modificação")
+                await query.answer("❌ Erro ao verificar pagamento...")
+            else:
+                logger.error(f"Erro ao editar mensagem de erro: {edit_error}")
+                await query.answer("❌ Erro ao atualizar mensagem")
 
 async def send_support_message(query, user_id):
     """Envia mensagem de suporte para problemas de pagamento"""
