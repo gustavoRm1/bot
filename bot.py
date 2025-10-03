@@ -1063,13 +1063,11 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
         await update.message.reply_text(f"📢 **STATUS DAS NOTIFICAÇÕES DE VENDAS**\n\n{status}\n\nChat ID: `{ADMIN_NOTIFICATION_CHAT_ID}`", parse_mode='Markdown')
     
     elif command == '/ativar_notificacoes':
-        global SALE_NOTIFICATIONS_ENABLED
         SALE_NOTIFICATIONS_ENABLED = True
         await update.message.reply_text("✅ **NOTIFICAÇÕES DE VENDAS ATIVADAS!**\n\nAgora você receberá notificações detalhadas sempre que uma venda for confirmada.", parse_mode='Markdown')
         event_logger.info("Notificações de vendas ativadas pelo admin")
     
     elif command == '/desativar_notificacoes':
-        global SALE_NOTIFICATIONS_ENABLED
         SALE_NOTIFICATIONS_ENABLED = False
         await update.message.reply_text("❌ **NOTIFICAÇÕES DE VENDAS DESATIVADAS!**\n\nVocê não receberá mais notificações de vendas.", parse_mode='Markdown')
         event_logger.info("Notificações de vendas desativadas pelo admin")
