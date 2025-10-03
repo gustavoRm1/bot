@@ -1010,6 +1010,7 @@ async def setup_bot_handlers(application, token):
     application.add_handler(CommandHandler("ativar_notificacoes", admin_command_handler))
     application.add_handler(CommandHandler("desativar_notificacoes", admin_command_handler))
     application.add_handler(CommandHandler("testar_notificacao", admin_command_handler))
+    application.add_handler(CommandHandler("testar_notificacao_simples", admin_command_handler))
     application.add_handler(CommandHandler("testar_mensagem", admin_command_handler))
     
     application.add_handler(CallbackQueryHandler(button_callback))
@@ -1047,6 +1048,7 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
 • `/ativar_notificacoes` - Ativa notificações
 • `/desativar_notificacoes` - Desativa notificações
 • `/testar_notificacao` - Testa sistema de notificações
+• `/testar_notificacao_simples` - Teste simplificado
 • `/testar_mensagem` - Testa envio de mensagem simples
 
 **Outros:**
@@ -1113,10 +1115,78 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
         
         # Tentar enviar notificação
         try:
-            await send_sale_notification_to_admin(test_payment_info, test_user_info, test_bot_info)
+            await update.message.reply_text("🔄 **ENVIANDO NOTIFICAÇÃO DE TESTE...**", parse_mode='Markdown')
+            
+            # Chamar função com timeout
+            await asyncio.wait_for(
+                send_sale_notification_to_admin(test_payment_info, test_user_info, test_bot_info),
+                timeout=30.0
+            )
+            
             await update.message.reply_text("✅ **TESTE CONCLUÍDO!**\n\nVerifique se você recebeu a notificação de teste.\n\nSe não recebeu, verifique os logs do bot.", parse_mode='Markdown')
+            
+        except asyncio.TimeoutError:
+            await update.message.reply_text("⏰ **TIMEOUT NO TESTE!**\n\nA função demorou mais de 30 segundos para responder.\n\nVerifique os logs para mais detalhes.", parse_mode='Markdown')
         except Exception as e:
             await update.message.reply_text(f"❌ **ERRO NO TESTE:**\n\n`{str(e)}`\n\nVerifique os logs para mais detalhes.", parse_mode='Markdown')
+    
+    elif command == '/testar_notificacao_simples':
+        # Teste simplificado de notificação
+        await update.message.reply_text("🧪 **TESTE SIMPLIFICADO DE NOTIFICAÇÃO...**", parse_mode='Markdown')
+        
+        try:
+            # Mensagem de teste simplificada
+            test_message = """🎉 **Pagamento Aprovado!**
+
+🤖 **Bot:** @teste_bot
+⚙️ **ID Bot:** 12345
+
+👤 **ID Cliente:** 7676333385
+🔗 **Username:** @robertinhaop1
+👤 **Nome de Perfil:** Roberta
+👤 **Nome Completo:** Roberta Teste
+📄 **CPF/CNPJ:** 123.456.789-00
+
+🌍 **Idioma:** pt-br
+⭐ **Telegram Premium:** Não
+📦 **Categoria:** Plano Normal
+🎁 **Plano:** **VITALÍCIO**
+📅 **Duração:** Vitalício
+
+💰 **Valor:** R$19.97
+💰 **Valor Líquido:** R$18.77
+
+⏱️ **Tempo Conversão:** 0d 0h 2m 15s
+🔑 **ID Transação Interna:** test_123
+🏷️ **ID Transação Gateway:** `test-uuid-123`
+💱 **Tipo Moeda:** BRL
+💳 **Método Pagamento:** pix
+🏢 **Plataforma Pagamento:** pushynpay"""
+            
+            # Tentar enviar diretamente
+            message_sent = False
+            
+            for token, bot_data in active_bots.items():
+                if bot_data['status'] == 'active':
+                    try:
+                        bot = bot_data['bot']
+                        await bot.send_message(
+                            chat_id=ADMIN_NOTIFICATION_CHAT_ID,
+                            text=test_message,
+                            parse_mode='Markdown'
+                        )
+                        message_sent = True
+                        await update.message.reply_text(f"✅ **NOTIFICAÇÃO SIMPLES ENVIADA!**\n\nBot usado: {token[:20]}...\n\nVerifique se você recebeu a notificação.", parse_mode='Markdown')
+                        break
+                    except Exception as e:
+                        logger.error(f"Erro ao enviar notificação simples: {e}")
+                        continue
+            
+            if not message_sent:
+                await update.message.reply_text("❌ **FALHA AO ENVIAR NOTIFICAÇÃO SIMPLES!**", parse_mode='Markdown')
+                
+        except Exception as e:
+            await update.message.reply_text(f"❌ **ERRO NO TESTE SIMPLES:**\n\n`{str(e)}`", parse_mode='Markdown')
     
     elif command == '/testar_mensagem':
         # Teste simples de envio de mensagem
