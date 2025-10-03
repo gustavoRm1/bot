@@ -1374,7 +1374,8 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
             'status': 'pending',
             'user_name': query.from_user.first_name or 'Usuário',
             'user_username': query.from_user.username or '',
-            'gateway': gateway_used
+            'gateway': gateway_used,
+            'bot_token': current_bot_token  # IMPORTANTE: Armazenar token do bot
         })
         
         # Marcar usuário como comprador
@@ -1508,6 +1509,7 @@ Obrigado pela compra! 🚀""")
             
             # Enviar link de acesso liberado com token do bot
             bot_token = payment_info.get('bot_token')
+            logger.info(f"Enviando link de acesso para usuário {user_id} com bot_token: {bot_token}")
             await send_access_link(user_id, bot_token)
             
             # Remover pagamento pendente
@@ -1618,40 +1620,49 @@ Obrigado pela paciência! 🙏"""
 async def send_access_link(user_id, bot_token=None):
     """Envia o link de acesso liberado após confirmação do pagamento"""
     try:
+        logger.info(f"=== INICIANDO ENVIO DE LINK DE ACESSO ===")
+        logger.info(f"User ID: {user_id}")
+        logger.info(f"Bot Token: {bot_token}")
+        
         # Determinar qual link usar baseado no bot que processou o pagamento
         access_link = "https://oacessoliberado.shop/vip2"  # Link padrão
         
         if bot_token and bot_token in BOT_LINKS:
             access_link = BOT_LINKS[bot_token]
-            event_logger.info(f"Usando link específico do bot {bot_token[:20]}...: {access_link}")
+            event_logger.info(f"✅ Usando link específico do bot {bot_token[:20]}...: {access_link}")
         else:
-            event_logger.info(f"Bot token não encontrado ou inválido: {bot_token}, usando link padrão: {access_link}")
+            event_logger.info(f"⚠️ Bot token não encontrado ou inválido: {bot_token}, usando link padrão: {access_link}")
         
         access_message = f"""🔓 Para Liberar Seu Acesso
 ⬇️Clique aqui⬇️
 
 {access_link}"""
         
+        logger.info(f"Mensagem a ser enviada: {access_message}")
+        
         # Obter bot ativo para enviar mensagem
         active_bot = None
         for token, bot_info in active_bots.items():
             if bot_info['status'] == 'active':
                 active_bot = bot_info['bot']
+                logger.info(f"Bot ativo encontrado: {token[:20]}...")
                 break
         
         if active_bot:
+            logger.info(f"Enviando mensagem para user_id: {user_id}")
             await active_bot.send_message(
                 chat_id=user_id,
                 text=access_message
             )
             
-            event_logger.info(f"Link de acesso enviado para usuário {user_id}: {access_link}")
+            event_logger.info(f"✅ Link de acesso enviado para usuário {user_id}: {access_link}")
             add_event('INFO', f'Link de acesso enviado para usuário {user_id}: {access_link}', user_id)
+            logger.info(f"=== LINK DE ACESSO ENVIADO COM SUCESSO ===")
         else:
-            logger.error("Nenhum bot ativo encontrado para enviar link de acesso")
+            logger.error("❌ Nenhum bot ativo encontrado para enviar link de acesso")
         
     except Exception as e:
-        logger.error(f"Erro ao enviar link de acesso: {e}")
+        logger.error(f"❌ Erro ao enviar link de acesso: {e}")
         add_event('ERROR', f'Erro ao enviar link de acesso: {e}', user_id)
 
 def start_downsell_timers(user_id):
