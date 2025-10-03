@@ -70,21 +70,21 @@ BOT_TOKENS = [
 BOT_LINKS = {
     '8306671959:AAHeqNjcC9C3MpAVrCXRyer62vOyfLm_0MM': 'https://oacessoliberado.shop/vip2',  # Link padrão original
     '7562715822:AAEPe1Men2JZHLWl5hjtoHtFO7FN6tHnxyM': 'https://oacessoliberado.shop/vip2',  # Link padrão original
-    '8465360609:AAGQuceE1GceIDZftS0MuVVmTYT1ifoe3hY': 'https://seusacessos.shop/acessoliberado',
-    '8225954437:AAFtdhf4_4r2EH3ydStFwRvhN1b4MVKxLgQ': 'https://seusacessos.shop/acessoliberado',
-    '8376203049:AAHBw3rMvolNSuIfZ-Si1CRifyRyf6z6lCY': 'https://seusacessos.shop/acessoliberado',
-    '8372884477:AAFl8GwuVNxWXXEumjwMbm63_l_DfdvvwqM': 'https://seusacessos.shop/acessoliberado',
-    '8426700153:AAF3NtPQZaPelVRdos1h1QkhIvGRbeDi-jQ': 'https://seusacessos.shop/acessoumosso',
-    '7344610657:AAH3_JTdnZH_0CkNxfhb0hAIptlfRseSaK8': 'https://seusacessos.shop/acessoumosso',
-    '8300351452:AAEsDLhXi4Cf5WVqnQS2-7ZkjBExbn5Z17U': 'https://seusacessos.shop/acessoumosso',
-    '8297063257:AAFFE3K8I6yycwZQ-fAGO6di0yr4n5jGh_w': 'https://seusacessos.shop/acessoliberadinho',
-    '8443691990:AAFjgMtr38_rHw6HZlnIvf3cCKTpb7m4R7Q': 'https://seusacessos.shop/acessoliberadinho',
-    '8339224972:AAEzCqgfTmPT3l6k2R9_-7L0En3c-bgOST0': 'https://seusacessos.shop/acessoliberadinho',
-    '8316837637:AAFgDiXo4HvU9RVJJrcwlkAz8kHj2xlbSok': 'https://seusacessos.shop/acessoliberadinho',
-    '8049999245:AAGHiasvg4X25RKQgdqsxLfaBjwiQI599oE': 'https://seusacessos.shop/acessoliberado2',
-    '8454123391:AAHfSpgEFB_9UXm66NuUmHhGGRE_TkuxiGk': 'https://seusacessos.shop/acessoliberado2',
-    '8383266949:AAEOs62d9yI1kgZ9tP6BsGTHGh4yLgcc_LI': 'https://seusacessos.shop/acessoliberado2',  # Token 16
-    '8382560938:AAE4dlx7fz4VfYDZrNWqLjWn4T7hG9XTN5g': 'https://seusacessos.shop/acessoliberado2',  # Token 17
+    '8465360609:AAGQuceE1GceIDZftS0MuVVmTYT1ifoe3hY': 'https://oacessoliberado.shop/acessoliberado',
+    '8225954437:AAFtdhf4_4r2EH3ydStFwRvhN1b4MVKxLgQ': 'https://oacessoliberado.shop/acessoliberado',
+    '8376203049:AAHBw3rMvolNSuIfZ-Si1CRifyRyf6z6lCY': 'https://oacessoliberado.shop/acessoliberado',
+    '8372884477:AAFl8GwuVNxWXXEumjwMbm63_l_DfdvvwqM': 'https://oacessoliberado.shop/acessoliberado',
+    '8426700153:AAF3NtPQZaPelVRdos1h1QkhIvGRbeDi-jQ': 'https://oacessoliberado.shop/acessoumosso',
+    '7344610657:AAH3_JTdnZH_0CkNxfhb0hAIptlfRseSaK8': 'https://oacessoliberado.shop/acessoumosso',
+    '8300351452:AAEsDLhXi4Cf5WVqnQS2-7ZkjBExbn5Z17U': 'https://oacessoliberado.shop/acessoumosso',
+    '8297063257:AAFFE3K8I6yycwZQ-fAGO6di0yr4n5jGh_w': 'https://oacessoliberado.shop/acessoliberadinho',
+    '8443691990:AAFjgMtr38_rHw6HZlnIvf3cCKTpb7m4R7Q': 'https://oacessoliberado.shop/acessoliberadinho',
+    '8339224972:AAEzCqgfTmPT3l6k2R9_-7L0En3c-bgOST0': 'https://oacessoliberado.shop/acessoliberadinho',
+    '8316837637:AAFgDiXo4HvU9RVJJrcwlkAz8kHj2xlbSok': 'https://oacessoliberado.shop/acessoliberadinho',
+    '8049999245:AAGHiasvg4X25RKQgdqsxLfaBjwiQI599oE': 'https://oacessoliberado.shop/acessoliberado2',
+    '8454123391:AAHfSpgEFB_9UXm66NuUmHhGGRE_TkuxiGk': 'https://oacessoliberado.shop/acessoliberado2',
+    '8383266949:AAEOs62d9yI1kgZ9tP6BsGTHGh4yLgcc_LI': 'https://oacessoliberado.shop/acessoliberado2',  # Token 16
+    '8382560938:AAE4dlx7fz4VfYDZrNWqLjWn4T7hG9XTN5g': 'https://oacessoliberado.shop/acessoliberado2',  # Token 17
 }
 
 # Configurações PushynPay (URLs CORRETAS)
