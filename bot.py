@@ -1017,6 +1017,7 @@ async def setup_bot_handlers(application, token):
     application.add_handler(CommandHandler("teste_final_producao", admin_command_handler))
     application.add_handler(CommandHandler("testar_chat_privado", admin_command_handler))
     application.add_handler(CommandHandler("debug_notificacoes", admin_command_handler))
+    application.add_handler(CommandHandler("iniciar_conversas", admin_command_handler))
     
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -1512,6 +1513,50 @@ async def admin_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
                 
         except Exception as e:
             await update.message.reply_text(f"❌ **ERRO NO DEBUG:**\n\n`{str(e)}`", parse_mode='Markdown')
+    
+    elif command == '/iniciar_conversas':
+        # Comando para iniciar conversas com todos os bots
+        await update.message.reply_text("🤖 **INICIANDO CONVERSAS COM TODOS OS BOTS**\n\nEnviando mensagem inicial para cada bot...", parse_mode='Markdown')
+        
+        try:
+            success_count = 0
+            error_count = 0
+            
+            for token, bot_data in active_bots.items():
+                if bot_data['status'] == 'active':
+                    try:
+                        bot = bot_data['bot']
+                        bot_me = await bot.get_me()
+                        
+                        # Enviar mensagem inicial para iniciar a conversa
+                        await bot.send_message(
+                            chat_id=ADMIN_NOTIFICATION_CHAT_ID,
+                            text=f"🤖 **Bot {bot_me.username} conectado!**\n\nAgora você receberá notificações de vendas deste bot.",
+                            parse_mode='Markdown'
+                        )
+                        
+                        success_count += 1
+                        
+                    except Exception as e:
+                        error_count += 1
+                        logger.error(f"Erro ao iniciar conversa com bot {token[:20]}: {e}")
+                        continue
+            
+            # Resultado
+            result_message = f"""✅ **CONVERSAS INICIADAS!**
+
+📊 **RESULTADO:**
+• ✅ Sucessos: {success_count}
+• ❌ Erros: {error_count}
+• 🤖 Total de bots: {len(active_bots)}
+
+💡 **PRÓXIMO PASSO:**
+Agora teste uma venda real para ver se as notificações chegam!"""
+            
+            await update.message.reply_text(result_message, parse_mode='Markdown')
+            
+        except Exception as e:
+            await update.message.reply_text(f"❌ **ERRO:**\n\n`{str(e)}`", parse_mode='Markdown')
     
     else:
         await update.message.reply_text("❌ Comando administrativo não reconhecido")
