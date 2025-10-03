@@ -134,6 +134,9 @@ RESPONSE_COOLDOWN = 5  # 5 segundos de cooldown após responder
 # Armazenamento de pagamentos pendentes
 pending_payments = {}  # {user_id: {'payment_id': str, 'amount': float, 'plan': str}}
 
+# Rate limiting para verificação PushynPay (conforme documentação: 1 minuto entre consultas)
+pushynpay_last_check = {}  # {payment_id: timestamp}
+
 # Sistema multi-bot com controle de shutdown
 active_bots = {}  # {token: {'application': app, 'bot': bot, 'status': 'active'|'failed'}}
 bot_rotation_index = 0
@@ -483,7 +486,14 @@ class SyncPayIntegration:
             response = requests.get(url, headers=headers, timeout=10)
             
             if response.status_code == 200:
-                return response.json()
+                payment_data = response.json()
+                # Retornar status baseado na resposta da SyncPay
+                if payment_data.get('status') == 'paid':
+                    return 'paid'
+                elif payment_data.get('status') == 'pending':
+                    return 'pending'
+                else:
+                    return None
             else:
                 logger.error(f"Erro ao verificar pagamento SyncPay: {response.status_code}")
                 return None
@@ -491,6 +501,92 @@ class SyncPayIntegration:
         except Exception as e:
             logger.error(f"Erro ao verificar status SyncPay: {e}")
             return None
+
+async def check_pushynpay_payment_status(payment_id):
+    """Verifica status do pagamento PushynPay usando a API oficial"""
+    try:
+        # Verificar rate limiting (conforme documentação: 1 minuto entre consultas)
+        current_time = time.time()
+        if payment_id in pushynpay_last_check:
+            time_since_last_check = current_time - pushynpay_last_check[payment_id]
+            if time_since_last_check < 60:  # 1 minuto
+                logger.info(f"Rate limiting PushynPay: aguardando {60 - time_since_last_check:.0f}s para {payment_id}")
+                return 'pending'  # Retornar pending para evitar bloqueio da conta
+        
+        # Registrar timestamp da consulta
+        pushynpay_last_check[payment_id] = current_time
+        
+        # Headers para autenticação PushynPay (conforme documentação oficial)
+        headers = {
+            "Authorization": f"Bearer {PUSHYNPAY_TOKEN}",
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+        
+        # URLs de verificação conforme documentação oficial PushynPay
+        verify_urls = [
+            f"{PUSHYNPAY_BASE_URL_PRODUCTION}/api/transactions/{payment_id}",  # Produção primeiro
+            f"{PUSHYNPAY_BASE_URL_SANDBOX}/api/transactions/{payment_id}"       # Sandbox como fallback
+        ]
+        
+        # Tentar cada URL de verificação
+        for verify_url in verify_urls:
+            try:
+                response = requests.get(
+                    verify_url,
+                    headers=headers,
+                    timeout=15
+                )
+                
+                if response.status_code == 200:
+                    payment_data = response.json()
+                    logger.info(f"Resposta PushynPay para {payment_id}: {payment_data}")
+                    
+                    # Verificar status baseado na resposta PushynPay
+                    # Conforme documentação, o retorno é igual ao de criar PIX
+                    status = payment_data.get('status', '').lower()
+                    
+                    if status in ['paid', 'completed', 'approved', 'success', 'confirmed']:
+                        return 'paid'
+                    elif status in ['pending', 'processing', 'waiting', 'created', 'open']:
+                        return 'pending'
+                    elif status in ['failed', 'cancelled', 'expired', 'rejected']:
+                        return 'failed'
+                    else:
+                        logger.warning(f"Status PushynPay desconhecido: {status}")
+                        # Se não reconhece o status, assumir pending para permitir nova verificação
+                        return 'pending'
+                        
+                elif response.status_code == 404:
+                    # Pagamento não encontrado - conforme documentação
+                    logger.debug(f"Pagamento não encontrado em {verify_url}")
+                    continue
+                elif response.status_code == 401:
+                    # Token inválido
+                    logger.error(f"Token PushynPay inválido para verificação")
+                    return None
+                else:
+                    logger.warning(f"Erro PushynPay verificação {response.status_code} em {verify_url}")
+                    continue
+                    
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"Erro de conexão PushynPay em {verify_url}: {e}")
+                continue
+            except Exception as e:
+                logger.warning(f"Erro PushynPay verificação em {verify_url}: {e}")
+                continue
+        
+        # Se chegou aqui, todas as tentativas falharam
+        logger.warning(f"Nenhuma URL de verificação PushynPay funcionou para {payment_id}")
+        
+        # Como fallback, assumir que o pagamento está pendente para permitir nova verificação
+        # Isso evita que o usuário fique preso em um erro permanente
+        return 'pending'
+        
+    except Exception as e:
+        logger.error(f"Erro geral na verificação PushynPay: {e}")
+        # Em caso de erro geral, retornar pending para permitir nova tentativa
+        return 'pending'
 
 async def create_pix_payment_pushynpay(user_id, amount, plan_name, customer_data):
     """Cria um pagamento PIX usando PushynPay com formato correto da API"""
@@ -844,6 +940,14 @@ async def setup_bot_handlers(application, token):
                 user_id = query.from_user.id
             
             await check_payment_status(query, user_id)
+        elif query.data.startswith("contatar_suporte"):
+            # Extrair user_id do callback_data
+            if "_" in query.data:
+                user_id = int(query.data.split("_")[-1])
+            else:
+                user_id = query.from_user.id
+            
+            await send_support_message(query, user_id)
         
         # Marcar resposta como enviada
         mark_response_sent(user_id)
@@ -1352,6 +1456,7 @@ async def check_payment_status(query, user_id):
         
         payment_info = pending_payments[user_id]
         payment_id = payment_info['payment_id']
+        gateway = payment_info.get('gateway', 'pushynpay')  # Default para PushynPay
         
         # Verificando status do pagamento
         
@@ -1367,11 +1472,26 @@ async def check_payment_status(query, user_id):
 📱 Ou aguarde até 24h para liberação automática.""")
             return
         
-        # Criar instância SyncPay
-        syncpay = SyncPayIntegration()
+        # Verificar status baseado no gateway usado
+        status = None
         
-        # Verificar na SyncPay
-        status = syncpay.check_payment_status(payment_id)
+        if gateway == 'pushynpay':
+            # Verificar via PushynPay com múltiplas tentativas
+            max_attempts = 3
+            for attempt in range(max_attempts):
+                status = await check_pushynpay_payment_status(payment_id)
+                if status is not None:
+                    break
+                if attempt < max_attempts - 1:
+                    logger.info(f"Tentativa {attempt + 1} de verificação PushynPay falhou, tentando novamente...")
+                    await asyncio.sleep(2)  # Aguardar 2 segundos entre tentativas
+        elif gateway == 'syncpay_original':
+            # Verificar via SyncPay Original
+            syncpay = SyncPayIntegration()
+            status = syncpay.check_payment_status(payment_id)
+        else:
+            logger.error(f"Gateway desconhecido para verificação: {gateway}")
+            status = None
         
         if status == 'paid':
             # Pagamento confirmado
@@ -1391,7 +1511,13 @@ Obrigado pela compra! 🚀""")
             
             # Remover pagamento pendente
             del pending_payments[user_id]
-            event_logger.info(f"Pagamento confirmado: R$ {payment_info['amount']}")
+            
+            # Atualizar no sistema compartilhado
+            from shared_data import remove_pending_payment, update_stats
+            remove_pending_payment(user_id)
+            update_stats('confirmed_payments')
+            
+            event_logger.info(f"Pagamento confirmado: R$ {payment_info['amount']} via {gateway}")
             
         elif status == 'pending':
             # Pagamento pendente - permitir verificação novamente
@@ -1413,7 +1539,8 @@ Obrigado pela compra! 🚀""")
         else:
             # Pagamento não encontrado ou erro - permitir nova verificação
             keyboard = [
-                [InlineKeyboardButton("🔄 Verificar Novamente", callback_data=f"verificar_pagamento_{user_id}")]
+                [InlineKeyboardButton("🔄 Verificar Novamente", callback_data=f"verificar_pagamento_{user_id}")],
+                [InlineKeyboardButton("📞 Contatar Suporte", callback_data=f"contatar_suporte_{user_id}")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
@@ -1425,6 +1552,8 @@ Obrigado pela compra! 🚀""")
 • PIX ainda está sendo processado
 • Aguarde alguns minutos após o pagamento
 • Verifique se copiou o código PIX corretamente
+
+📞 Se o problema persistir, clique em "Contatar Suporte"
 
 💰 Valor: R$ {payment_info['amount']:.2f}
 📋 Plano: {payment_info['plan']}""", reply_markup=reply_markup)
@@ -1449,6 +1578,41 @@ Obrigado pela compra! 🚀""")
 
 💰 Valor: R$ {payment_info['amount']:.2f}
 📋 Plano: {payment_info['plan']}""", reply_markup=reply_markup)
+
+async def send_support_message(query, user_id):
+    """Envia mensagem de suporte para problemas de pagamento"""
+    try:
+        # Obter informações do pagamento pendente
+        payment_info = pending_payments.get(user_id, {})
+        
+        support_message = f"""📞 SUPORTE TÉCNICO
+
+Olá! Identificamos um problema com a verificação do seu pagamento.
+
+🔍 **INFORMAÇÕES DO PAGAMENTO:**
+• ID: {payment_info.get('payment_id', 'N/A')}
+• Valor: R$ {payment_info.get('amount', 0):.2f}
+• Plano: {payment_info.get('plan', 'N/A')}
+• Gateway: {payment_info.get('gateway', 'N/A')}
+
+📱 **PRÓXIMOS PASSOS:**
+1. Envie o comprovante de pagamento para @seu_usuario
+2. Aguarde até 24h para liberação automática
+3. Se urgente, entre em contato diretamente
+
+⚠️ **IMPORTANTE:** Mantenha o comprovante do PIX para comprovação.
+
+Obrigado pela paciência! 🙏"""
+
+        await query.edit_message_text(support_message)
+        
+        # Log do evento de suporte
+        event_logger.info(f"Usuário {user_id} solicitou suporte para pagamento {payment_info.get('payment_id')}")
+        add_event('INFO', f'Suporte solicitado por usuário {user_id} para pagamento {payment_info.get("payment_id")}', user_id)
+        
+    except Exception as e:
+        logger.error(f"Erro ao enviar mensagem de suporte: {e}")
+        await query.edit_message_text("❌ Erro ao processar solicitação de suporte. Tente novamente.")
 
 async def send_access_link(user_id, bot_token=None):
     """Envia o link de acesso liberado após confirmação do pagamento"""
