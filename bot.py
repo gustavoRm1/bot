@@ -864,7 +864,7 @@ async def setup_bot_handlers(application, token):
         
         # Mensagem principal
         message_text = """🚷 𝗩𝗢𝗖Ê 𝗔𝗖𝗔𝗕𝗢𝗨 𝗗𝗘 𝗘𝗡𝗧𝗥𝗔𝗥 𝗡𝗢 𝗔𝗕𝗜𝗦𝗠𝗢 — 𝗘 𝗔𝗤𝗨𝗜 𝗡Ã𝗢 𝗘𝗫𝗜𝗦𝗧𝗘 𝗩𝗢𝗟𝗧𝗔.
-💎 O maior e mais pr🔞ibid🔞 Rateio de Grupos VIPs do Telegram está aberto… mas não por muito tempo.
+💎 O maior e mais pr🔞curad🔞 Rateio de Grupos VIPs do Telegram está aberto… mas não por muito tempo.
 
 🔞 OnlyF4ns, Privacy, Close Friends VAZADOS
 🔞 Famosas, Nov!nhas +18, Amadoras & Milf's insaciáveis
@@ -879,7 +879,7 @@ async def setup_bot_handlers(application, token):
 ❌ Aqui não tem "achismos": são os vídeos que NINGUÉM teria coragem de postar publicamente.
 👉 Se você sair agora, nunca mais encontra esse conteúdo.
 
-🎁 𝗕ô𝗻𝘂𝘀 𝗦ó 𝗛𝗼𝗷𝗲: 𝗮𝗼 𝗮𝘀𝘀𝗶𝗻𝗮𝗿, 𝘃𝗼𝗰ê 𝗿𝗲𝗰𝗲𝗯𝗲 𝗮𝗰𝗲𝘀𝘀𝗼 𝘀𝗲𝗰𝗿𝗲𝘁𝗼 𝗮 +𝟰 𝗚𝗿𝘂𝗽𝗼𝘀 𝗩𝗜𝗣'𝘀 𝗼𝗰𝘂𝗹𝘁𝗼𝘀 (𝗻𝗼𝘃!𝗻𝗵𝟰𝘀, 𝗰𝗮𝘀𝗮𝗱𝗮𝘀 𝗿𝗲𝗮𝗶𝘀, 𝗳𝗹𝗮𝗴𝗿𝗮𝘀 𝗽𝗿🔞𝗶𝗯𝗶𝗱𝗼𝘀 & 𝗺í𝗱𝗶𝗮𝘀 𝗱𝗮 𝗱4️⃣ 𝗿𝗸 𝘄𝟯𝗯)."""
+🎁 𝗕ô𝗻𝘂𝘀 𝗦ó 𝗛𝗼𝗷𝗲: 𝗮𝗼 𝗮𝘀𝘀𝗶𝗻𝗮𝗿, 𝘃𝗼𝗰ê 𝗿𝗲𝗰𝗲𝗯𝗲 𝗮𝗰𝗲𝘀𝘀𝗼 𝘀𝗲𝗰𝗿𝗲𝘁𝗼 𝗮 +𝟰 𝗚𝗿𝘂𝗽𝗼𝘀 𝗩𝗜𝗣'𝘀 𝗼𝗰𝘂𝗹𝘁𝗼𝘀 (𝗻𝗼𝘃!𝗻𝗵𝟰𝘀 +𝟭𝟴, 𝗰𝗮𝘀𝗮𝗱𝗮𝘀 𝗿𝗲𝗮𝗶𝘀, 𝗳𝗹@𝗴𝗿@𝘀 & 𝗺í𝗱𝗶𝗮𝘀 𝗲𝘅𝗰𝗹𝘂í𝗱𝗮𝘀 𝗱𝗮 𝘄𝟯𝗯)."""
         
         # Botões
         keyboard = [
@@ -1758,10 +1758,10 @@ async def send_order_bump(query):
     order_bump_text = """📦 DESBLOQUEAR SALA VERMELHA 📦
 
 🚷 Arquivos deletados do servidor principal e salvos só pra essa liberação.
-✅ Amador das faveladinhas
-✅ Amador com o papai depois do banho ⭐️🤫
-✅ Vídeos que já foi banido em vários países.
-✅ Conteúdo de cameras escondidas com áudio original.
+✅ Amador das faveladas
+✅ Amador com o pai depois do banho ⭐️🤫
+✅ Vídeos que muitos procuram várias países.
+✅ Conteúdo de cameras com áudio original.
 💥 Ative agora e leva 1 grupo s3cr3to bônus."""
     
     # Botões do order bump
@@ -1791,11 +1791,11 @@ async def send_order_bump_mensal(query):
     # Mensagem do order bump mensal (PACOTE SOMBRIO)
     order_bump_text = """📦 DESBLOQUEAR PACOTE SOMBRIO 📦
 
-🚷 Arquivos deletados do servidor principal e salvos só pra essa liberação.
-✅ Amador das faveladinhas
-✅ Amador com o papai depois do banho ⭐️🤫
-✅ Vídeos que já foi banido em vários países.
-✅ Conteúdo de cameras escondidas com áudio original.
+🚷 Arquivos esquecidos e salvos só pra essa liberação.
+✅ Amador das faveladas
+✅ Amador com o pai depois do banho ⭐️🤫
+✅ Vídeos que já foi esquecidos em vários países.
+✅ Conteúdo de cameras com áudio original.
 💥 Ative agora e leva 1 grupo s3cr3to bônus."""
     
     # Botões do order bump mensal
