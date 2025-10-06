@@ -64,6 +64,9 @@ BOT_TOKENS = [
     '8454123391:AAHfSpgEFB_9UXm66NuUmHhGGRE_TkuxiGk',  # Token 15
     '8383266949:AAEOs62d9yI1kgZ9tP6BsGTHGh4yLgcc_LI',  # Token 16
     '8382560938:AAE4dlx7fz4VfYDZrNWqLjWn4T7hG9XTN5g',  # Token 17
+    '8260047923:AAGM3bUwqVPXWwlnYgrWfFxmS8A3TUq3CI8',  # Token 18
+    '8318857911:AAEgO1xAEOcrowDKlhvBAbHpdEurlP9KRI8',  # Token 19
+    '8291262027:AAEbD_oJUPfnA5x-ezKgki3rJ59dqkWlJVM',  # Token 20
 ]
 
 # Configuração de links por bot (OPÇÃO 1)
@@ -85,6 +88,9 @@ BOT_LINKS = {
     '8454123391:AAHfSpgEFB_9UXm66NuUmHhGGRE_TkuxiGk': 'https://oacessoliberado.shop/acessoliberado2',
     '8383266949:AAEOs62d9yI1kgZ9tP6BsGTHGh4yLgcc_LI': 'https://oacessoliberado.shop/acessoliberado2',  # Token 16
     '8382560938:AAE4dlx7fz4VfYDZrNWqLjWn4T7hG9XTN5g': 'https://oacessoliberado.shop/acessoliberado2',  # Token 17
+    '8260047923:AAGM3bUwqVPXWwlnYgrWfFxmS8A3TUq3CI8': 'https://oacessoliberado.shop/acessoliberado2',  # Token 18
+    '8318857911:AAEgO1xAEOcrowDKlhvBAbHpdEurlP9KRI8': 'https://oacessoliberado.shop/acessoliberado2',  # Token 19
+    '8291262027:AAEbD_oJUPfnA5x-ezKgki3rJ59dqkWlJVM': 'https://oacessoliberado.shop/acessoliberado2',  # Token 20
 }
 
 # Configurações PushynPay (URLs CORRETAS)
