@@ -889,7 +889,7 @@ async def setup_bot_handlers(application, token):
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         # Enviar vídeo principal via link
-        video_link = "https://t.me/MDMDMDMDAA2/35"  # Link do vídeo principal
+        video_link = "https://t.me/MIDIASBOTIS/5"  # Link do vídeo principal
         
         try:
             await update.message.reply_video(
@@ -1772,7 +1772,7 @@ async def send_order_bump(query):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Enviar vídeo do order bump via link
-    video_link = "https://t.me/MDMDMDMDAA2/3"  # Link do order bump vitalício
+    video_link = "https://t.me/MIDIASBOTIS/4"  # Link do order bump vitalício
     
     try:
             await query.message.reply_video(
@@ -1806,7 +1806,7 @@ async def send_order_bump_mensal(query):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Enviar vídeo do order bump mensal via link
-    video_link = "https://t.me/MDMDMDMDAA2/4"  # Link do order bump mensal
+    video_link = "https://t.me/MIDIASBOTIS/3"  # Link do order bump mensal
     
     try:
             await query.message.reply_video(

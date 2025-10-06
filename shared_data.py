@@ -38,7 +38,7 @@ default_data = {
                 "text": "👁️‍🗨️ Os conteúdos mais extremos da comunidade estão aqui.\nE você ainda tá de fora por menos de R$16…\n\n🚫 Fl@gr@s que nunca deviam vazar.\n🎥 Câmeras escondidas no ato.\n📂 Nudes deletados e recuperados.\n\n👉 Ou você entra agora, ou continua só imaginando o que os outros já estão vendo.",
                 "sendTime": 5,
                 "discount": 5,
-                "mediaFile": "https://t.me/MDMDMDMDAA2/14",
+                "mediaFile": "https://t.me/MIDIASBOTIS/3",
                 "audioFile": "",
                 "recipients": "all",
                 "content_type": "video",
