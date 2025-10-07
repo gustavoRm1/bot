@@ -422,592 +422,125 @@ class ParadiseGateway:
             'X-API-Key': self.api_key
         }
     
-    async def create_payment(self, amount, description, customer_data, user_id, checkout_url=None):
-        """Cria um pagamento PIX via Paradise - VERSÃO CORRIGIDA"""
-        try:
-            logger.info(f"🏛️ Criando pagamento Paradise: R$ {amount}")
-            
-            # ============================================
-            # 🔑 GERAR REFERÊNCIA INTERNA (APENAS PARA LOG)
-            # ============================================
-            internal_reference = f'BOT-{user_id}-{int(time.time())}'
-            logger.info(f"📝 Referência interna: {internal_reference}")
-            
-            # Preparar dados do cliente
-            clean_document = re.sub(r'\D', '', customer_data.get('document', '12345678900'))
-            clean_phone = re.sub(r'\D', '', customer_data.get('phone', '11999999999'))
-            
-            # Payload para Paradise API
-            payload = {
-                "amount": round(amount * 100),  # Paradise espera em centavos
-                "description": description,
-                "reference": internal_reference,  # Referência interna
-                "checkoutUrl": checkout_url or '',
-                "productHash": self.product_hash,
-                "orderbump": [],
-                "customer": {
-                    'name': customer_data.get('name', f'Cliente {user_id}'),
-                    'email': customer_data.get('email', f'cliente{user_id}@email.com'),
-                    'document': clean_document,
-                    'phone': clean_phone
-                },
-                "address": {
+    
+async def create_payment(self, amount, description, customer_data, user_id, checkout_url=None):
+    """Cria um pagamento PIX via Paradise - CORREÇÃO: garante que pix_data sempre seja definida
+    e que o transaction_id seja extraído de forma robusta (evita uso de 'id' interno)."""
+    pix_data = None
+    try:
+        logger.info(f"🏛️ Criando pagamento Paradise: R$ {amount}")
+        # Referência interna somente para logs
+        internal_reference = f'BOT-{user_id}-{int(time.time())}'
+        logger.info(f"📝 Referência interna: {internal_reference}")
+        
+        # Limpar document/phone
+        clean_document = re.sub(r'\D', '', customer_data.get('document', '12345678900'))
+        clean_phone = re.sub(r'\D', '', customer_data.get('phone', '11999999999'))
+        
+        payload = {
+            "amount": round(amount * 100),  # Paradise espera centavos
+            "description": description,
+            "reference": internal_reference,
+            "checkoutUrl": checkout_url or '',
+            "productHash": self.product_hash,
+            "orderbump": [],
+            "customer": {
+                "name": customer_data.get('name', f'Cliente {user_id}'),
+                "email": customer_data.get('email', f'cliente{user_id}@email.com'),
+                "document": clean_document,
+                "phone": clean_phone
+            },
+            "address": {
                 "street": "Rua do Produto Digital",
                 "number": "0",
-                "neighborhood": "Internet", 
+                "neighborhood": "Internet",
                 "city": "Brasil",
                 "state": "BR",
                 "zipcode": "00000000",
                 "complement": "N/A"
-                }
             }
-            
-            logger.info(f"📤 Enviando requisição para Paradise...")
-            logger.info(f"📦 Payload: {json.dumps(payload, indent=2)}")
-            
-            # Fazer requisição para Paradise
-            response = requests.post(
-                f"{self.base_url}/transaction.php",
-                json=payload,
-                headers=self._get_headers(),
-                timeout=self.timeout
-            )
-            
-            logger.info(f"📥 Paradise Response Status: {response.status_code}")
-            
-            if response.status_code >= 200 and response.status_code < 300:
-                response_data = response.json()
-                
-                # ============================================
-                # 🚨 LOG CRÍTICO - RESPOSTA COMPLETA DO PARADISE
-                # ============================================
-                logger.error("=" * 80)
-                logger.error("🚨 RESPOSTA COMPLETA DO PARADISE - ANÁLISE CRÍTICA")
-                logger.error("=" * 80)
-                logger.error(f"Status Code: {response.status_code}")
-                logger.error(f"Response Headers: {dict(response.headers)}")
-                logger.error(f"Response Text: {response.text}")
-                logger.error(f"Response JSON: {json.dumps(response_data, indent=2)}")
-                logger.error("=" * 80)
-                
-                # ============================================
-                # 🔑 EXTRAIR TRANSACTION DATA
-                # ============================================
-                transaction_data = response_data.get('transaction', response_data)
-                
-                logger.error("=" * 80)
-                logger.error("🔍 ANÁLISE DOS CAMPOS DISPONÍVEIS")
-                logger.error("=" * 80)
-                logger.error(f"response_data keys: {list(response_data.keys())}")
-                logger.error(f"transaction_data keys: {list(transaction_data.keys()) if transaction_data else 'N/A'}")
-                logger.error("=" * 80)
-                
-                # ============================================
-                # 🔑 EXTRAIR ID REAL DO PARADISE (CRÍTICO!)
-                # ============================================
-                
-                # ============================================
-                # 🔑 CORREÇÃO CRÍTICA - PRIORIZAR transaction_id
-                # ============================================
-                
-                # Paradise retorna o ID real em 'transaction_id', não em 'id'
-                paradise_transaction_id = (
-                    transaction_data.get('transaction_id') or  # ← PRIORIDADE 1: ID REAL
-                    response_data.get('transaction_id') or    # ← PRIORIDADE 2: ID REAL
-                    transaction_data.get('hash') or           # ← PRIORIDADE 3: HASH
-                    response_data.get('hash') or              # ← PRIORIDADE 4: HASH
-                    transaction_data.get('uuid') or           # ← PRIORIDADE 5: UUID
-                    response_data.get('uuid') or              # ← PRIORIDADE 6: UUID
-                    transaction_data.get('payment_id') or     # ← PRIORIDADE 7: PAYMENT_ID
-                    response_data.get('payment_id')           # ← PRIORIDADE 8: PAYMENT_ID
-                    # NÃO USAR 'id' - contém referência interna!
-                )
-                
-                # ============================================
-                # 🔍 LOG DETALHADO DE TODOS OS CAMPOS
-                # ============================================
-                logger.error("=" * 80)
-                logger.error("🔍 TENTATIVA DE EXTRAÇÃO DO ID")
-                logger.error("=" * 80)
-                logger.error(f"transaction_data.get('id'): {transaction_data.get('id')}")
-                logger.error(f"transaction_data.get('transaction_id'): {transaction_data.get('transaction_id')}")
-                logger.error(f"transaction_data.get('hash'): {transaction_data.get('hash')}")
-                logger.error(f"transaction_data.get('reference'): {transaction_data.get('reference')}")
-                logger.error(f"transaction_data.get('uuid'): {transaction_data.get('uuid')}")
-                logger.error(f"transaction_data.get('payment_id'): {transaction_data.get('payment_id')}")
-                logger.error(f"response_data.get('id'): {response_data.get('id')}")
-                logger.error(f"response_data.get('transaction_id'): {response_data.get('transaction_id')}")
-                logger.error(f"response_data.get('hash'): {response_data.get('hash')}")
-                logger.error(f"response_data.get('reference'): {response_data.get('reference')}")
-                logger.error(f"response_data.get('uuid'): {response_data.get('uuid')}")
-                logger.error(f"response_data.get('payment_id'): {response_data.get('payment_id')}")
-                logger.error(f"ID FINAL EXTRAÍDO: {paradise_transaction_id}")
-                logger.error("=" * 80)
-                
-                # ============================================
-                # ✅ CONFIRMAÇÃO DA CORREÇÃO
-                # ============================================
-                if paradise_transaction_id and not paradise_transaction_id.startswith('BOT-'):
-                    logger.error("=" * 80)
-                    logger.error("✅ SUCESSO! ID REAL DO PARADISE EXTRAÍDO!")
-                    logger.error(f"🔑 Transaction ID Paradise: {paradise_transaction_id}")
-                    logger.error("=" * 80)
-                else:
-                    logger.error("=" * 80)
-                    logger.error("❌ FALHA! AINDA USANDO ID INTERNO!")
-                    logger.error(f"🔑 ID Extraído: {paradise_transaction_id}")
-                    logger.error("=" * 80)
-                
-                logger.info("=" * 60)
-                logger.info("🔑 EXTRAÇÃO DO ID DA TRANSAÇÃO PARADISE")
-                logger.info(f"ID encontrado: {paradise_transaction_id}")
-                logger.info(f"Tipo: {type(paradise_transaction_id)}")
-                logger.info(f"Campos disponíveis em transaction_data: {list(transaction_data.keys())}")
-                logger.info(f"Campos disponíveis em response_data: {list(response_data.keys())}")
-                logger.info("=" * 60)
-                
-                # ============================================
-                # 🚨 VALIDAÇÃO CRÍTICA DO ID
-                # ============================================
-                
-                if not paradise_transaction_id:
-                    logger.error("=" * 60)
-                    logger.error("❌ CRÍTICO: PARADISE NÃO RETORNOU ID DE TRANSAÇÃO!")
-                    logger.error(f"Response completo: {json.dumps(response_data, indent=2)}")
-                    logger.error("=" * 60)
-                    return None
-                
-                # Validar que o ID não é a referência interna
-                if paradise_transaction_id == internal_reference:
-                    logger.error("=" * 60)
-                    logger.error("❌ CRÍTICO: PARADISE RETORNOU A REFERÊNCIA INTERNA!")
-                    logger.error(f"ID retornado: {paradise_transaction_id}")
-                    logger.error(f"Referência interna: {internal_reference}")
-                    logger.error("Paradise deveria retornar seu próprio ID!")
-                    logger.error("=" * 60)
-                    # MESMO ASSIM, vamos continuar, mas marcar como suspeito
-                    logger.warning("⚠️ Continuando com ID suspeito...")
-                
-                # Validar formato do ID
-                if paradise_transaction_id.startswith('BOT-'):
-                    logger.warning("⚠️ ID começa com 'BOT-', pode ser referência interna!")
-                
-                # ============================================
-                # 🔑 EXTRAIR QR CODE
-                # ============================================
-                
-                qr_code = (
-                    transaction_data.get('qr_code') or 
-                          transaction_data.get('pix_qr_code') or
-                          response_data.get('qr_code') or
-                    response_data.get('pix_qr_code')
-                )
-                
-                if not qr_code:
-                    logger.error("❌ Paradise retornou sem QR Code")
-                    logger.error(f"Response: {response_data}")
-                    return None
-                
-                # ============================================
-                # ✅ RETORNAR DADOS DO PIX COM ID CORRETO
-                # ============================================
-                
-                    pix_data = {
-                    'id': paradise_transaction_id,  # ✅ ID REAL DO PARADISE
-                    'transaction_id': paradise_transaction_id,  # ✅ DUPLICADO PARA GARANTIA
-                        'qr_code': qr_code,
-                    'pix_qr_code': qr_code,
-                        'expires_at': transaction_data.get('expires_at'),
-                        'amount': amount,
-                    'reference': internal_reference,  # Referência interna (só para log)
-                        'gateway': 'paradise',
-                    
-                    # ✅ RESPOSTA COMPLETA PARA DEBUG
-                    'raw_response': response_data
-                }
-                
-                logger.info("=" * 60)
-                logger.info("✅ PARADISE PIX CRIADO COM SUCESSO")
-                logger.info(f"🔑 Transaction ID Paradise: {paradise_transaction_id}")
-                logger.info(f"📝 Referência Interna: {internal_reference}")
-                logger.info(f"💰 Valor: R$ {amount}")
-                logger.info(f"📱 QR Code: {qr_code[:50]}...")
-                logger.info("=" * 60)
-                
-                return pix_data
-                
-            else:
-                logger.error(f"❌ Paradise API Error {response.status_code}: {response.text}")
-                return None
-                
-        except requests.exceptions.RequestException as e:
-            logger.error(f"❌ Erro de conexão Paradise: {e}")
-            return None
-        except json.JSONDecodeError as e:
-            logger.error(f"❌ Erro ao decodificar JSON Paradise: {e}")
-            logger.error(f"Response text: {response.text if 'response' in locals() else 'N/A'}")
-            return None
-        except Exception as e:
-            logger.error(f"❌ Erro geral Paradise: {e}")
-            logger.error(f"Exception type: {type(e).__name__}")
-            import traceback
-            traceback.print_exc()
-            return None
-    
-    async def check_payment_status(self, transaction_id):
-        """Verifica status do pagamento no Paradise - VERSÃO CORRIGIDA"""
-        try:
-            logger.info("=" * 60)
-            logger.info("🔍 VERIFICANDO STATUS NO PARADISE")
-            logger.info(f"Transaction ID recebido: {transaction_id}")
-            logger.info(f"Tipo: {type(transaction_id)}")
-            logger.info("=" * 60)
-            
-            # ============================================
-            # 🚨 VALIDAÇÃO CRÍTICA DO TRANSACTION ID
-            # ============================================
-            
-            # Se o ID começa com 'BOT-', é o ID interno, NÃO o do Paradise!
-            if transaction_id.startswith('BOT-'):
-                logger.error("=" * 60)
-                logger.error("❌ CRÍTICO: TENTANDO VERIFICAR COM ID INTERNO!")
-                logger.error(f"ID recebido: {transaction_id}")
-                logger.error("Este NÃO é o ID do Paradise!")
-                logger.error("Paradise não vai reconhecer este ID!")
-                logger.error("=" * 60)
-                
-                # BLOQUEAR COMPLETAMENTE A VERIFICAÇÃO
-                return None
-            
-            # ============================================
-            # 📡 FAZER REQUISIÇÃO AO PARADISE
-            # ============================================
-            
-            response = requests.get(
-                f"{self.base_url}/check_status.php",
-                params={'hash': transaction_id, '_': int(time.time())},
-                headers=self._get_headers(),
-                timeout=self.timeout
-            )
-            
-            logger.info(f"📥 Paradise Status Response Code: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                logger.info(f"📄 Paradise Status Response: {json.dumps(data, indent=2)}")
-                
-                # Verificar diferentes formatos de resposta do Paradise
-                payment_status = (
-                    data.get('payment_status') or 
-                                data.get('status') or 
-                    data.get('state')
-                )
-                
-                logger.info(f"📊 Status extraído: {payment_status}")
-                
-                # ============================================
-                # 🔒 VALIDAÇÃO RIGOROSA DO STATUS
-                # ============================================
-                
-                if payment_status == 'paid':
-                    logger.info("=" * 60)
-                    logger.info("✅ PAGAMENTO CONFIRMADO PELO PARADISE")
-                    logger.info(f"Transaction ID: {transaction_id}")
-                    logger.info("=" * 60)
-                    return 'paid'
-                    
-                elif payment_status in ['pending', 'waiting', 'processing', 'created']:
-                    logger.info(f"⏳ Pagamento Paradise PENDENTE (status: {payment_status})")
-                    return 'pending'
-                    
-                elif payment_status in ['failed', 'cancelled', 'expired', 'rejected']:
-                    logger.info(f"❌ Pagamento Paradise FALHOU (status: {payment_status})")
-                    return 'failed'
-                    
-                elif payment_status == 'not_found':
-                    logger.warning(f"⚠️ Transação Paradise NÃO ENCONTRADA: {transaction_id}")
-                    logger.warning("💡 Pode ser problema de timing - transação ainda sendo processada")
-                    return 'pending'  # Tratar como pendente para nova verificação
-                    
-                else:
-                    logger.warning(f"⚠️ Status Paradise DESCONHECIDO: {payment_status}")
-                    return 'failed'
-                    
-            elif response.status_code == 401:
-                logger.error("❌ API Key Paradise INVÁLIDA")
-                return 'api_key_invalid'
-                
-            else:
-                logger.warning(f"⚠️ Paradise status check failed: {response.status_code}")
-                return None
-            
-        except Exception as e:
-            logger.error(f"❌ Erro ao verificar status Paradise: {e}")
-            import traceback
-            traceback.print_exc()
-            return None
-    
-    async def test_connection(self):
-        """Testa conexão com Paradise API"""
-        try:
-            logger.info("🧪 Testando conexão com Paradise API...")
-            
-            test_payload = {
-                "amount": 100,
-                "description": "Teste de Conexão",
-                "reference": f"TEST-{int(time.time())}",
-                "checkoutUrl": "",
-                "productHash": self.product_hash,
-                "orderbump": [],
-                "customer": {
-                    'name': 'Teste Bot',
-                    'email': 'teste@bot.com',
-                    'document': '12345678900',
-                    'phone': '11999999999'
-                },
-                "address": {
-                    "street": "Rua do Teste",
-                    "number": "0",
-                    "neighborhood": "Teste",
-                    "city": "Teste",
-                    "state": "BR",
-                    "zipcode": "00000000",
-                    "complement": "Teste"
-                }
-            }
-            
-            response = requests.post(
-                f"{self.base_url}/transaction.php",
-                json=test_payload,
-                headers=self._get_headers(),
-                timeout=10
-            )
-            
-            logger.info(f"🧪 Teste Paradise - Status: {response.status_code}")
-            
-            if response.status_code == 200:
-                logger.info("✅ Conexão Paradise OK")
-                return True
-            else:
-                logger.error(f"❌ Teste Paradise falhou: {response.status_code}")
-                return False
-                
-        except Exception as e:
-            logger.error(f"❌ Erro no teste Paradise: {e}")
-            return False
-
-class SyncPayIntegration:
-    """Integração profissional com SyncPay"""
-    
-    def __init__(self):
-        self.client_id = SYNCPAY_CLIENT_ID
-        self.client_secret = SYNCPAY_CLIENT_SECRET
-        self.base_url = SYNCPAY_BASE_URL
-        self.access_token = None
-        self.token_expires_at = 0
-    
-    def get_access_token(self):
-        """Obtém token de acesso da SyncPay"""
-        try:
-            if self.access_token and time.time() < self.token_expires_at:
-                return self.access_token
-            
-            url = f"{self.base_url}/api/partner/v1/auth-token"
-            data = {
-                'client_id': self.client_id,
-                'client_secret': self.client_secret
-            }
-            
-            response = requests.post(url, json=data, timeout=15)
-            
-            if response.status_code == 200:
-                token_data = response.json()
-                self.access_token = token_data['access_token']
-                self.token_expires_at = time.time() + token_data['expires_in'] - 60  # 1 min de margem
-                
-                # Token obtido com sucesso
-                return self.access_token
-            else:
-                logger.error(f"Erro ao obter token SyncPay: {response.status_code}")
-                return None
-                
-        except Exception as e:
-            logger.error(f"Erro ao obter token SyncPay: {e}")
-            return None
-    
-    def create_payment(self, amount, description, user_id):
-        """Cria pagamento PIX na SyncPay usando API Cash-in"""
-        try:
-            # Criando pagamento SyncPay
-            
-            # Obter token de acesso primeiro
-            token = self.get_access_token()
-            if not token:
-                logger.error("Token SyncPay não obtido")
-                return None
-            
-            url = f"{self.base_url}/api/partner/v1/cash-in"
-            headers = {
-                'Authorization': f'Bearer {token}',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-            
-            # Dados do cliente (obrigatórios pela API)
-            client_data = {
-                'name': f'Usuário {user_id}',
-                'cpf': '12345678900',  # CPF genérico para testes
-                'email': f'user{user_id}@telegram.com',
-                'phone': '11999999999'  # Telefone genérico
-            }
-            
-            data = {
-                'amount': amount,
-                'description': description,
-                'client': client_data,
-                'webhook_url': 'https://webhook.site/your-webhook-url'  # Opcional
-            }
-            
-            response = requests.post(url, json=data, headers=headers, timeout=15)
-            
-            if response.status_code == 200:
-                payment_data = response.json()
-                event_logger.info(f"Pagamento SyncPay criado: R$ {amount}")
-                
-                return {
-                    'payment_id': payment_data.get('identifier'),
-                    'pix_code': payment_data.get('pix_code'),
-                    'status': 'pending'
-                }
-            else:
-                logger.error(f"Erro HTTP SyncPay {response.status_code}")
-                return None
-                
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Erro de conexão SyncPay: {e}")
-            return None
-        except Exception as e:
-            logger.error(f"Erro ao criar pagamento SyncPay: {e}")
-            return None
-    
-    def check_payment_status(self, payment_id):
-        """Verifica status do pagamento"""
-        try:
-            # Obter token de acesso primeiro
-            token = self.get_access_token()
-            if not token:
-                return None
-            
-            url = f"{self.base_url}/api/partner/v1/payments/{payment_id}"
-            headers = {
-                'Authorization': f'Bearer {token}',
-                'Accept': 'application/json'
-            }
-            
-            response = requests.get(url, headers=headers, timeout=10)
-            
-            if response.status_code == 200:
-                payment_data = response.json()
-                # Retornar status baseado na resposta da SyncPay
-                if payment_data.get('status') == 'paid':
-                    return 'paid'
-                elif payment_data.get('status') == 'pending':
-                    return 'pending'
-                else:
-                    return None
-            else:
-                logger.error(f"Erro ao verificar pagamento SyncPay: {response.status_code}")
-                return None
-                
-        except Exception as e:
-            logger.error(f"Erro ao verificar status SyncPay: {e}")
-            return None
-
-async def check_pushynpay_payment_status(payment_id):
-    """Verifica status do pagamento PushynPay usando a API oficial"""
-    try:
-        # Verificar rate limiting (conforme documentação: 1 minuto entre consultas)
-        current_time = time.time()
-        if payment_id in pushynpay_last_check:
-            time_since_last_check = current_time - pushynpay_last_check[payment_id]
-            if time_since_last_check < 60:  # 1 minuto
-                logger.info(f"Rate limiting PushynPay: aguardando {60 - time_since_last_check:.0f}s para {payment_id}")
-                return 'pending'  # Retornar pending para evitar bloqueio da conta
-        
-        # Registrar timestamp da consulta
-        pushynpay_last_check[payment_id] = current_time
-        
-        # Headers para autenticação PushynPay (conforme documentação oficial)
-        headers = {
-            "Authorization": f"Bearer {PUSHYNPAY_TOKEN}",
-            "Accept": "application/json",
-            "Content-Type": "application/json"
         }
         
-        # URLs de verificação conforme documentação oficial PushynPay
-        verify_urls = [
-            f"{PUSHYNPAY_BASE_URL_PRODUCTION}/api/transactions/{payment_id}",  # Produção primeiro
-            f"{PUSHYNPAY_BASE_URL_SANDBOX}/api/transactions/{payment_id}"       # Sandbox como fallback
-        ]
+        logger.info("📤 Enviando requisição para Paradise.")
+        logger.debug(f"📦 Payload Paradise: {json.dumps(payload)[:1000]}")
         
-        # Tentar cada URL de verificação
-        for verify_url in verify_urls:
+        response = requests.post(
+            f"{self.base_url}/transaction.php",
+            json=payload,
+            headers=self._get_headers(),
+            timeout=self.timeout
+        )
+        
+        logger.info(f"📥 Paradise Response Status: {response.status_code}")
+        
+        if response.status_code >= 200 and response.status_code < 300:
             try:
-                response = requests.get(
-                    verify_url,
-                    headers=headers,
-                    timeout=15
-                )
-                
-                if response.status_code == 200:
-                    payment_data = response.json()
-                    logger.info(f"Resposta PushynPay para {payment_id}: {payment_data}")
-                    
-                    # Verificar status baseado na resposta PushynPay
-                    # Conforme documentação, o retorno é igual ao de criar PIX
-                    status = payment_data.get('status', '').lower()
-                    
-                    if status in ['paid', 'completed', 'approved', 'success', 'confirmed']:
-                        return 'paid'
-                    elif status in ['pending', 'processing', 'waiting', 'created', 'open']:
-                        return 'pending'
-                    elif status in ['failed', 'cancelled', 'expired', 'rejected']:
-                        return 'failed'
-                    else:
-                        logger.warning(f"Status PushynPay desconhecido: {status}")
-                        # Se não reconhece o status, assumir pending para permitir nova verificação
-                        return 'pending'
-                        
-                elif response.status_code == 404:
-                    # Pagamento não encontrado - conforme documentação
-                    logger.debug(f"Pagamento não encontrado em {verify_url}")
-                    continue
-                elif response.status_code == 401:
-                    # Token inválido
-                    logger.error(f"Token PushynPay inválido para verificação")
-                    return None
-                else:
-                    logger.warning(f"Erro PushynPay verificação {response.status_code} em {verify_url}")
-                    continue
-                    
-            except requests.exceptions.RequestException as e:
-                logger.warning(f"Erro de conexão PushynPay em {verify_url}: {e}")
-                continue
-            except Exception as e:
-                logger.warning(f"Erro PushynPay verificação em {verify_url}: {e}")
-                continue
-        
-        # Se chegou aqui, todas as tentativas falharam
-        logger.warning(f"Nenhuma URL de verificação PushynPay funcionou para {payment_id}")
-        
-        # Como fallback, assumir que o pagamento está pendente para permitir nova verificação
-        # Isso evita que o usuário fique preso em um erro permanente
-        return 'pending'
-        
+                response_data = response.json()
+            except json.JSONDecodeError:
+                logger.error("❌ Paradise retornou JSON inválido")
+                return None
+
+            # transaction_data pode estar dentro de response_data['transaction'] ou na própria resposta
+            transaction_data = None
+            if isinstance(response_data, dict) and 'transaction' in response_data and isinstance(response_data['transaction'], dict):
+                transaction_data = response_data['transaction']
+            elif isinstance(response_data, dict):
+                transaction_data = response_data
+            
+            # Extrair ID preferindo transaction_id e evitando usar 'id' interno quando possível
+            paradise_transaction_id = None
+            if isinstance(transaction_data, dict):
+                paradise_transaction_id = transaction_data.get('transaction_id') or transaction_data.get('hash') or transaction_data.get('hash_id')
+            if not paradise_transaction_id and isinstance(response_data, dict):
+                paradise_transaction_id = response_data.get('transaction_id') or response_data.get('hash') or response_data.get('hash_id')
+            # Como último recurso (não ideal), aceitar 'id' se não for igual à referência interna
+            if not paradise_transaction_id and isinstance(transaction_data, dict):
+                tmp_id = transaction_data.get('id') or response_data.get('id')
+                if tmp_id and tmp_id != internal_reference:
+                    paradise_transaction_id = tmp_id
+            
+            if not paradise_transaction_id:
+                logger.error("❌ CRÍTICO: PARADISE NÃO RETORNOU ID DE TRANSAÇÃO! Response completo: %s", json.dumps(response_data))
+                return None
+            
+            # Extrair QR/pix code
+            qr_code = None
+            if isinstance(transaction_data, dict):
+                qr_code = transaction_data.get('qr_code') or transaction_data.get('pix_qr_code')
+            if not qr_code and isinstance(response_data, dict):
+                qr_code = response_data.get('qr_code') or response_data.get('pix_qr_code') or response_data.get('pix')
+            
+            if not qr_code:
+                logger.error("❌ Paradise retornou sem QR Code")
+                logger.error(f"Response: {response_data}")
+                return None
+            
+            # Construir objeto de retorno de forma clara e dedentada (sempre definido antes de retorno)
+            pix_data = {
+                'id': paradise_transaction_id,
+                'transaction_id': paradise_transaction_id,
+                'qr_code': qr_code,
+                'pix_qr_code': qr_code,
+                'expires_at': (transaction_data.get('expires_at') if isinstance(transaction_data, dict) else response_data.get('expires_at')),
+                'amount': amount,
+                'reference': internal_reference,
+                'gateway': 'paradise',
+                'raw_response': response_data
+            }
+            
+            logger.info("✅ PARADISE PIX CRIADO COM SUCESSO - transaction_id: %s", paradise_transaction_id)
+            return pix_data
+        else:
+            logger.error(f"❌ Paradise API Error {response.status_code}: {response.text}")
+            return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f"❌ Erro de conexão Paradise: {e}")
+        return None
     except Exception as e:
-        logger.error(f"Erro geral na verificação PushynPay: {e}")
-        # Em caso de erro geral, retornar pending para permitir nova tentativa
-        return 'pending'
+        logger.error(f"❌ Erro geral Paradise: {e}", exc_info=True)
+        import traceback; traceback.print_exc()
+        return None
+
 
 async def create_pix_payment_paradise(user_id, amount, plan_name, customer_data, checkout_url=None):
     """Cria um pagamento PIX usando Paradise como gateway principal"""
@@ -2257,8 +1790,9 @@ async def send_order_bump_mensal(query):
         await query.edit_message_text(order_bump_text, reply_markup=reply_markup)
         # Fallback para texto
 
+
 async def create_payment(query, amount, description, user_id, bot_token=None):
-    """Cria pagamento PIX com fallback simples entre gateways - CORRIGIDO"""
+    """Cria pagamento PIX com fallback simples entre gateways - CORREÇÃO: usa gateway_tx_id seguro"""
     try:
         logger.info("=" * 60)
         logger.info("🟢 INICIANDO CRIAÇÃO DE PAGAMENTO")
@@ -2267,7 +1801,7 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         logger.info(f"Description: {description}")
         logger.info(f"Bot Token Recebido: {bot_token}")
         
-        # CRÍTICO: Garantir que bot_token seja capturado
+        # Garantir bot_token
         if bot_token is None:
             logger.warning("⚠️ Bot token não foi passado! Tentando recuperar de active_bots")
             if active_bots:
@@ -2278,165 +1812,101 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
                 await query.message.reply_text("❌ Erro interno. Tente novamente.")
                 return
         
-        # Validar se o bot_token existe em BOT_LINKS
         if bot_token not in BOT_LINKS:
-            logger.warning(f"⚠️ Bot token {bot_token} não tem link específico - usando padrão")
+            logger.info(f"Usando link padrão para bot_token {bot_token}")
         else:
             logger.info(f"✅ Link específico encontrado: {BOT_LINKS[bot_token]}")
         
-        # Dados do cliente (com timestamp para evitar cache Paradise)
+        # Cache buster
         timestamp = int(time.time())
-        
-        # Valor ligeiramente diferente para evitar cache (últimos 2 dígitos do timestamp)
-        cache_buster = (timestamp % 100) / 10000  # 0.00 a 0.99 centavos
+        cache_buster = (timestamp % 100) / 10000
         unique_amount = amount + cache_buster
-        
         customer_data = {
             "name": query.from_user.first_name or f"Cliente {user_id}",
-            "email": f"cliente{user_id}_{timestamp}@test.com",  # E-mail único para evitar cache
+            "email": f"cliente{user_id}_{timestamp}@test.com",
             "document": "12345678900"
         }
-        
         logger.info(f"🔧 Cache buster aplicado: +{cache_buster:.4f} = R$ {unique_amount:.4f}")
         
-        # PARADISE COMO GATEWAY PRINCIPAL
         payment_data = None
         gateway_used = None
+        gateway_tx_id = None
         
-        # ============================================
-        # 🔵 TENTAR PARADISE PRIMEIRO (GATEWAY PRINCIPAL)
-        # ============================================
+        # Tentar Paradise primeiro
         try:
-            logger.info("🔵 Tentando Paradise (Gateway Principal)...")
-            
-            # Obter URL do checkout baseada no bot
+            logger.info("🔵 Tentando Paradise (Gateway Principal)." )
             checkout_url = BOT_LINKS.get(bot_token, 'https://oacessoliberado.shop/vip2')
             logger.info(f"📍 Checkout URL: {checkout_url}")
-            
             payment_data = await create_pix_payment_paradise(user_id, unique_amount, description, customer_data, checkout_url)
-            
-            if payment_data and payment_data.get('qr_code'):
-                gateway_used = "paradise"
-                logger.info("✅ Paradise funcionou - Gateway Principal")
-                
-                # ============================================
-                # 🔑 CRÍTICO: EXTRAIR O ID CORRETO DO PARADISE
-                # ============================================
-                
-                # O Paradise pode retornar o ID em diferentes campos
-                paradise_transaction_id = (
-                    payment_data.get('id') or 
-                    payment_data.get('transaction_id') or 
-                    payment_data.get('hash') or
-                    payment_data.get('reference')
-                )
-                
-                logger.info("=" * 60)
-                logger.info("🔑 EXTRAINDO ID DA TRANSAÇÃO PARADISE")
-                logger.info(f"Resposta completa do Paradise: {json.dumps(payment_data, indent=2)}")
-                logger.info(f"ID extraído: {paradise_transaction_id}")
-                logger.info("=" * 60)
-                
-                if not paradise_transaction_id:
-                    logger.error("❌ CRÍTICO: Paradise não retornou ID de transação!")
-                    logger.error(f"Campos disponíveis: {list(payment_data.keys())}")
-                    raise Exception("Paradise não retornou ID de transação válido")
-                
-                # Validar que o ID não é apenas um número sequencial
-                if paradise_transaction_id.isdigit() and len(paradise_transaction_id) < 10:
-                    logger.warning(f"⚠️ ID suspeito (muito curto): {paradise_transaction_id}")
-                
-                logger.info(f"✅ ID da transação Paradise confirmado: {paradise_transaction_id}")
-                
+            if payment_data and (payment_data.get('qr_code') or payment_data.get('pix_qr_code') or payment_data.get('pix')):
+                gateway_used = 'paradise'
+                gateway_tx_id = payment_data.get('transaction_id') or payment_data.get('id') or payment_data.get('payment_id') or payment_data.get('gateway_transaction_id')
+                if not gateway_tx_id:
+                    logger.warning('⚠️ Paradise não retornou transaction_id - será usado campo de referência se disponível.')
+                    gateway_tx_id = payment_data.get('reference')
             else:
-                raise Exception("Paradise retornou sem código PIX")
-                
+                logger.warning('🔵 Paradise não retornou payment_data válido, tentando fallbacks.')
+                payment_data = None
         except Exception as e:
             logger.warning(f"Paradise falhou: {e}")
             payment_data = None
         
-        # ============================================
-        # 🟡 SE PARADISE FALHOU, TENTAR PUSHYNPAY (FALLBACK 1)
-        # ============================================
+        # Fallback: PushynPay
         if not payment_data:
             try:
-                logger.info("🟡 Tentando PushynPay (Fallback 1)...")
+                logger.info("🟡 Tentando PushynPay (Fallback 1)." )
                 payment_data = await create_pix_payment_pushynpay(user_id, unique_amount, description, customer_data)
-                
-                if payment_data and payment_data.get('qr_code'):
-                    gateway_used = "pushynpay"
-                    logger.info("✅ PushynPay funcionou - Fallback 1")
-                    
-                    # PushynPay também precisa do ID correto
-                    paradise_transaction_id = payment_data.get('id') or payment_data.get('payment_id')
-                    
-                    if not paradise_transaction_id:
+                if payment_data and (payment_data.get('qr_code') or payment_data.get('pix')):
+                    gateway_used = 'pushynpay'
+                    gateway_tx_id = payment_data.get('id') or payment_data.get('payment_id') or payment_data.get('transaction_id')
+                    if not gateway_tx_id:
                         raise Exception("PushynPay não retornou ID de transação válido")
                 else:
-                    raise Exception("PushinPay retornou sem código PIX")
-                    
+                    raise Exception("PushynPay retornou sem código PIX")
             except Exception as e:
                 logger.warning(f"PushynPay falhou: {e}")
                 payment_data = None
         
-        # ============================================
-        # 🟠 SE AMBOS FALHARAM, TENTAR SYNCPAY (FALLBACK 2)
-        # ============================================
+        # Fallback: SyncPay Original
         if not payment_data:
             try:
-                logger.info("🟠 Tentando SyncPay Original (Fallback 2)...")
+                logger.info("🟠 Tentando SyncPay Original (Fallback 2)." )
                 payment_data = await create_pix_payment_syncpay_original(user_id, unique_amount, description, customer_data)
-                
-                if payment_data and payment_data.get('pix_code'):
-                    gateway_used = "syncpay_original"
-                    logger.info("✅ SyncPay Original funcionou - Fallback 2")
-                    
-                    paradise_transaction_id = payment_data.get('id') or payment_data.get('payment_id')
-                    
-                    if not paradise_transaction_id:
+                if payment_data and (payment_data.get('pix_code') or payment_data.get('qr_code')):
+                    gateway_used = 'syncpay_original'
+                    gateway_tx_id = payment_data.get('id') or payment_data.get('payment_id') or payment_data.get('identifier')
+                    if not gateway_tx_id:
                         raise Exception("SyncPay não retornou ID de transação válido")
                 else:
                     raise Exception("SyncPay retornou sem código PIX")
-                    
             except Exception as e:
                 logger.warning(f"SyncPay Original falhou: {e}")
                 payment_data = None
         
-        # ============================================
-        # ❌ SE TODOS FALHARAM
-        # ============================================
         if not payment_data:
             logger.error("❌ TODOS OS GATEWAYS FALHARAM")
             await query.message.reply_text("❌ ERRO: Sistema de pagamento temporariamente indisponível. Tente novamente em alguns minutos.")
             return
         
-        # ============================================
-        # ✅ SUCESSO! PROCESSAR PAGAMENTO
-        # ============================================
-        
-        pix_code = payment_data.get('qr_code') or payment_data.get('pix_code')
-        
+        # Extrair pix code com segurança
+        pix_code = payment_data.get('qr_code') or payment_data.get('pix_code') or payment_data.get('pix') or payment_data.get('pix_qr_code')
         if not pix_code:
-            logger.error(f"❌ Código PIX não encontrado na resposta")
+            logger.error(f"❌ Código PIX não encontrado na resposta: {payment_data}")
             await query.message.reply_text("❌ Erro ao gerar código PIX. Tente novamente.")
             return
         
-        # ============================================
-        # 🔑 CRIAR OBJETO DE PAGAMENTO COM IDs CORRETOS
-        # ============================================
+        # Gerar ID interno
+        internal_payment_id = f'BOT-{str(user_id)[:4]}' if isinstance(user_id, (str, int)) else f'BOT-{int(time.time())}'
         
-        # Gerar ID interno para referência local
-        internal_payment_id = f'BOT-{user_id[:4] if isinstance(user_id, str) else str(user_id)[:4]}'
+        # Garantir gateway_tx_id mínimo - se ainda None, tentar extrair de payment_data
+        if not gateway_tx_id:
+            gateway_tx_id = payment_data.get('transaction_id') or payment_data.get('id') or payment_data.get('payment_id') or payment_data.get('reference') or f'UNK-{int(time.time())}'
+            logger.warning(f"⚠️ gateway_tx_id ausente, usando fallback: {gateway_tx_id}")
         
         payment_info = {
-            # ✅ ID DO GATEWAY (para verificação)
-            'payment_id': paradise_transaction_id,  # ← ID REAL DO PARADISE!
-            
-            # ✅ ID INTERNO (para controle local)
+            'payment_id': gateway_tx_id,
             'internal_id': internal_payment_id,
-            
-            # ✅ Outros dados
-            'amount': amount,  # Valor original (não o único)
+            'amount': amount,
             'plan': description,
             'gateway': gateway_used,
             'pix_code': pix_code,
@@ -2445,48 +1915,29 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
             'user_name': query.from_user.first_name or 'Usuário',
             'user_username': query.from_user.username or '',
             'bot_token': bot_token,
-            
-            # ✅ IDs completos para rastreamento
-            'gateway_transaction_id': paradise_transaction_id,  # ID do gateway
-            'gateway_response': payment_data  # Resposta completa (para debug)
+            'gateway_transaction_id': gateway_tx_id,
+            'gateway_response': payment_data
         }
         
-        # Armazenar localmente
+        # Salvar localmente
         pending_payments[user_id] = payment_info
-        
-        # Armazenar no sistema compartilhado
         try:
             from shared_data import add_pending_payment
             add_pending_payment(user_id, payment_info)
-        except ImportError:
+        except Exception:
             logger.warning("Função add_pending_payment não disponível no shared_data")
         
-        logger.info("=" * 60)
         logger.info("✅ PAGAMENTO CRIADO COM SUCESSO")
         logger.info(f"Internal ID: {internal_payment_id}")
-        logger.info(f"Gateway Transaction ID: {paradise_transaction_id}")
+        logger.info(f"Gateway Transaction ID: {gateway_tx_id}")
         logger.info(f"Gateway usado: {gateway_used}")
-        logger.info(f"Bot Token: {bot_token}")
-        logger.info("=" * 60)
         
-        # Mensagem do PIX
-        pix_message = f"""✅ PIX GERADO COM SUCESSO!
-
-<pre>{pix_code}</pre>
-
-💡 Toque no código acima para copiá-lo facilmente
-
-⏰ Após o pagamento, clique no botão abaixo para verificar:"""
-        
-        # Botão para verificar pagamento
-        keyboard = [
-            [InlineKeyboardButton("🔍 Verificar Pagamento", callback_data=f"verificar_pagamento_{user_id}")]
-        ]
+        # Enviar mensagem com PIX
+        pix_message = f"""✅ PIX GERADO COM SUCESSO!\n\n<pre>{pix_code}</pre>\n\n⏰ Após o pagamento, clique no botão abaixo para verificar:"""
+        keyboard = [[InlineKeyboardButton("🔍 Verificar Pagamento", callback_data=f"verificar_pagamento_{user_id}")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        # Enviar mensagem
         await query.message.reply_text(pix_message, reply_markup=reply_markup, parse_mode='HTML')
-        event_logger.info(f"PIX enviado via {gateway_used} - Transaction ID: {paradise_transaction_id}")
+        event_logger.info(f"PIX enviado via {gateway_used} - Transaction ID: {gateway_tx_id}")
         
     except Exception as e:
         logger.error(f"❌ ERRO na create_payment: {str(e)}", exc_info=True)
@@ -2494,6 +1945,7 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
             await query.message.reply_text("❌ ERRO ao processar pagamento. Tente novamente.")
         except:
             await query.answer("❌ ERRO ao processar pagamento. Tente novamente.")
+
 
 # Função create_fallback_payment removida - não queremos PIX manual
 # O sistema agora usa apenas Paradise como gateway principal
