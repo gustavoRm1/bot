@@ -452,13 +452,13 @@ class ParadiseGateway:
                     'phone': clean_phone
                 },
                 "address": {
-                    "street": "Rua do Produto Digital",
-                    "number": "0",
-                    "neighborhood": "Internet", 
-                    "city": "Brasil",
-                    "state": "BR",
-                    "zipcode": "00000000",
-                    "complement": "N/A"
+                "street": "Rua do Produto Digital",
+                "number": "0",
+                "neighborhood": "Internet", 
+                "city": "Brasil",
+                "state": "BR",
+                "zipcode": "00000000",
+                "complement": "N/A"
                 }
             }
             
@@ -506,20 +506,21 @@ class ParadiseGateway:
                 # 🔑 EXTRAIR ID REAL DO PARADISE (CRÍTICO!)
                 # ============================================
                 
-                # Paradise pode retornar o ID em diferentes campos
+                # ============================================
+                # 🔑 CORREÇÃO CRÍTICA - PRIORIZAR transaction_id
+                # ============================================
+                
+                # Paradise retorna o ID real em 'transaction_id', não em 'id'
                 paradise_transaction_id = (
-                    transaction_data.get('id') or
-                    transaction_data.get('transaction_id') or
-                    transaction_data.get('hash') or
-                    transaction_data.get('reference') or
-                    transaction_data.get('uuid') or
-                    transaction_data.get('payment_id') or
-                    response_data.get('id') or
-                    response_data.get('transaction_id') or
-                    response_data.get('hash') or
-                    response_data.get('reference') or
-                    response_data.get('uuid') or
-                    response_data.get('payment_id')
+                    transaction_data.get('transaction_id') or  # ← PRIORIDADE 1: ID REAL
+                    response_data.get('transaction_id') or    # ← PRIORIDADE 2: ID REAL
+                    transaction_data.get('hash') or           # ← PRIORIDADE 3: HASH
+                    response_data.get('hash') or              # ← PRIORIDADE 4: HASH
+                    transaction_data.get('uuid') or           # ← PRIORIDADE 5: UUID
+                    response_data.get('uuid') or              # ← PRIORIDADE 6: UUID
+                    transaction_data.get('payment_id') or     # ← PRIORIDADE 7: PAYMENT_ID
+                    response_data.get('payment_id')           # ← PRIORIDADE 8: PAYMENT_ID
+                    # NÃO USAR 'id' - contém referência interna!
                 )
                 
                 # ============================================
@@ -542,6 +543,20 @@ class ParadiseGateway:
                 logger.error(f"response_data.get('payment_id'): {response_data.get('payment_id')}")
                 logger.error(f"ID FINAL EXTRAÍDO: {paradise_transaction_id}")
                 logger.error("=" * 80)
+                
+                # ============================================
+                # ✅ CONFIRMAÇÃO DA CORREÇÃO
+                # ============================================
+                if paradise_transaction_id and not paradise_transaction_id.startswith('BOT-'):
+                    logger.error("=" * 80)
+                    logger.error("✅ SUCESSO! ID REAL DO PARADISE EXTRAÍDO!")
+                    logger.error(f"🔑 Transaction ID Paradise: {paradise_transaction_id}")
+                    logger.error("=" * 80)
+                else:
+                    logger.error("=" * 80)
+                    logger.error("❌ FALHA! AINDA USANDO ID INTERNO!")
+                    logger.error(f"🔑 ID Extraído: {paradise_transaction_id}")
+                    logger.error("=" * 80)
                 
                 logger.info("=" * 60)
                 logger.info("🔑 EXTRAÇÃO DO ID DA TRANSAÇÃO PARADISE")
@@ -583,8 +598,8 @@ class ParadiseGateway:
                 
                 qr_code = (
                     transaction_data.get('qr_code') or 
-                    transaction_data.get('pix_qr_code') or
-                    response_data.get('qr_code') or
+                          transaction_data.get('pix_qr_code') or
+                          response_data.get('qr_code') or
                     response_data.get('pix_qr_code')
                 )
                 
@@ -597,15 +612,15 @@ class ParadiseGateway:
                 # ✅ RETORNAR DADOS DO PIX COM ID CORRETO
                 # ============================================
                 
-                pix_data = {
+                    pix_data = {
                     'id': paradise_transaction_id,  # ✅ ID REAL DO PARADISE
                     'transaction_id': paradise_transaction_id,  # ✅ DUPLICADO PARA GARANTIA
-                    'qr_code': qr_code,
+                        'qr_code': qr_code,
                     'pix_qr_code': qr_code,
-                    'expires_at': transaction_data.get('expires_at'),
-                    'amount': amount,
+                        'expires_at': transaction_data.get('expires_at'),
+                        'amount': amount,
                     'reference': internal_reference,  # Referência interna (só para log)
-                    'gateway': 'paradise',
+                        'gateway': 'paradise',
                     
                     # ✅ RESPOSTA COMPLETA PARA DEBUG
                     'raw_response': response_data
@@ -619,9 +634,9 @@ class ParadiseGateway:
                 logger.info(f"📱 QR Code: {qr_code[:50]}...")
                 logger.info("=" * 60)
                 
-                return pix_data
+                    return pix_data
                 
-            else:
+                else:
                 logger.error(f"❌ Paradise API Error {response.status_code}: {response.text}")
                 return None
                 
@@ -684,7 +699,7 @@ class ParadiseGateway:
                 # Verificar diferentes formatos de resposta do Paradise
                 payment_status = (
                     data.get('payment_status') or 
-                    data.get('status') or 
+                                data.get('status') or 
                     data.get('state')
                 )
                 
@@ -2380,7 +2395,7 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         if not payment_data:
             logger.error("❌ TODOS OS GATEWAYS FALHARAM")
             await query.message.reply_text("❌ ERRO: Sistema de pagamento temporariamente indisponível. Tente novamente em alguns minutos.")
-            return
+                return
         
         # ============================================
         # ✅ SUCESSO! PROCESSAR PAGAMENTO
@@ -2511,7 +2526,7 @@ async def check_payment_status(query, user_id):
             except ImportError:
                 logger.error("❌ Módulo shared_data não disponível")
                 payment_info = None
-        
+            
         if not payment_info:
             logger.error("=" * 60)
             logger.error("❌ PAGAMENTO NÃO ENCONTRADO EM NENHUM LOCAL")
@@ -2571,21 +2586,21 @@ async def check_payment_status(query, user_id):
             logger.info(f"📡 Tentativa {verification_attempts}/{max_attempts}")
             
             try:
-                if gateway == 'paradise':
-                    paradise = ParadiseGateway()
-                    status = await paradise.check_payment_status(payment_id)
+        if gateway == 'paradise':
+                paradise = ParadiseGateway()
+                status = await paradise.check_payment_status(payment_id)
                     logger.info(f"📥 Resposta Paradise (tentativa {verification_attempts}): {status}")
                 
-                elif gateway == 'pushynpay':
-                    status = await check_pushynpay_payment_status(payment_id)
+        elif gateway == 'pushynpay':
+                status = await check_pushynpay_payment_status(payment_id)
                     logger.info(f"📥 Resposta PushynPay (tentativa {verification_attempts}): {status}")
                 
-                elif gateway == 'syncpay_original':
-                    syncpay = SyncPayIntegration()
-                    status = syncpay.check_payment_status(payment_id)
+        elif gateway == 'syncpay_original':
+            syncpay = SyncPayIntegration()
+            status = syncpay.check_payment_status(payment_id)
                     logger.info(f"📥 Resposta SyncPay (tentativa {verification_attempts}): {status}")
                 
-                else:
+        else:
                     logger.error(f"❌ Gateway desconhecido: {gateway}")
                     status = 'error_unknown_gateway'
                     break
@@ -2781,7 +2796,7 @@ async def check_payment_status(query, user_id):
             return
         
         # CASO 4: STATUS DESCONHECIDO (BLOQUEAR POR SEGURANÇA)
-        else:
+                else:
             logger.error("=" * 60)
             logger.error(f"❌ STATUS DESCONHECIDO RECEBIDO: {status}")
             logger.error(f"Gateway: {gateway}")
@@ -2804,7 +2819,7 @@ async def check_payment_status(query, user_id):
                 reply_markup=reply_markup
             )
             return
-        
+            
     except Exception as e:
         logger.error("=" * 60)
         logger.error(f"❌ ERRO CRÍTICO em check_payment_status")
