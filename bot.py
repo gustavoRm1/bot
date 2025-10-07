@@ -444,12 +444,10 @@ class ParadiseGateway:
             
             logger.info(f"💰 Convertendo valor: R$ {amount:.2f} -> {amount_in_cents} centavos")
             
-            # Payload básico (seguindo estrutura do index.php)
+            # Payload EXATO que funcionou no site web
             payload = {
                 "amount": amount_in_cents,  # ✅ VALOR EM CENTAVOS
-                "description": description,
-                "reference": internal_reference,
-                "productHash": getattr(self, "product_hash", None),  # ✅ OBRIGATÓRIO
+                "productHash": "prod_6c60b3dd3ae2c63e",  # ✅ HARDCODED - FUNCIONOU NO SITE
                 "customer": {
                     "name": customer_data.get("name", f"Cliente {user_id}"),
                     "email": customer_data.get("email", f"cliente{user_id}@email.com"),
