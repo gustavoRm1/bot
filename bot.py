@@ -634,9 +634,9 @@ class ParadiseGateway:
                 logger.info(f"📱 QR Code: {qr_code[:50]}...")
                 logger.info("=" * 60)
                 
-                    return pix_data
+                return pix_data
                 
-                else:
+            else:
                 logger.error(f"❌ Paradise API Error {response.status_code}: {response.text}")
                 return None
                 
