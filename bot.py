@@ -612,15 +612,15 @@ class ParadiseGateway:
                 # ✅ RETORNAR DADOS DO PIX COM ID CORRETO
                 # ============================================
                 
-                pix_data = {
+                    pix_data = {
                     'id': paradise_transaction_id,  # ✅ ID REAL DO PARADISE
                     'transaction_id': paradise_transaction_id,  # ✅ DUPLICADO PARA GARANTIA
-                    'qr_code': qr_code,
+                        'qr_code': qr_code,
                     'pix_qr_code': qr_code,
-                    'expires_at': transaction_data.get('expires_at'),
-                    'amount': amount,
+                        'expires_at': transaction_data.get('expires_at'),
+                        'amount': amount,
                     'reference': internal_reference,  # Referência interna (só para log)
-                    'gateway': 'paradise',
+                        'gateway': 'paradise',
                     
                     # ✅ RESPOSTA COMPLETA PARA DEBUG
                     'raw_response': response_data
@@ -634,9 +634,9 @@ class ParadiseGateway:
                 logger.info(f"📱 QR Code: {qr_code[:50]}...")
                 logger.info("=" * 60)
                 
-                return pix_data
+                    return pix_data
                 
-            else:
+                else:
                 logger.error(f"❌ Paradise API Error {response.status_code}: {response.text}")
                 return None
                 
@@ -724,6 +724,11 @@ class ParadiseGateway:
                     logger.info(f"❌ Pagamento Paradise FALHOU (status: {payment_status})")
                     return 'failed'
                     
+                elif payment_status == 'not_found':
+                    logger.warning(f"⚠️ Transação Paradise NÃO ENCONTRADA: {transaction_id}")
+                    logger.warning("💡 Pode ser problema de timing - transação ainda sendo processada")
+                    return 'pending'  # Tratar como pendente para nova verificação
+                    
                 else:
                     logger.warning(f"⚠️ Status Paradise DESCONHECIDO: {payment_status}")
                     return 'failed'
@@ -735,7 +740,7 @@ class ParadiseGateway:
             else:
                 logger.warning(f"⚠️ Paradise status check failed: {response.status_code}")
                 return None
-                
+            
         except Exception as e:
             logger.error(f"❌ Erro ao verificar status Paradise: {e}")
             import traceback
@@ -2279,12 +2284,20 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         else:
             logger.info(f"✅ Link específico encontrado: {BOT_LINKS[bot_token]}")
         
-        # Dados do cliente
+        # Dados do cliente (com timestamp para evitar cache Paradise)
+        timestamp = int(time.time())
+        
+        # Valor ligeiramente diferente para evitar cache (últimos 2 dígitos do timestamp)
+        cache_buster = (timestamp % 100) / 10000  # 0.00 a 0.99 centavos
+        unique_amount = amount + cache_buster
+        
         customer_data = {
             "name": query.from_user.first_name or f"Cliente {user_id}",
-            "email": f"cliente{user_id}@example.com",
+            "email": f"cliente{user_id}_{timestamp}@test.com",  # E-mail único para evitar cache
             "document": "12345678900"
         }
+        
+        logger.info(f"🔧 Cache buster aplicado: +{cache_buster:.4f} = R$ {unique_amount:.4f}")
         
         # PARADISE COMO GATEWAY PRINCIPAL
         payment_data = None
@@ -2300,7 +2313,7 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
             checkout_url = BOT_LINKS.get(bot_token, 'https://oacessoliberado.shop/vip2')
             logger.info(f"📍 Checkout URL: {checkout_url}")
             
-            payment_data = await create_pix_payment_paradise(user_id, amount, description, customer_data, checkout_url)
+            payment_data = await create_pix_payment_paradise(user_id, unique_amount, description, customer_data, checkout_url)
             
             if payment_data and payment_data.get('qr_code'):
                 gateway_used = "paradise"
@@ -2348,7 +2361,7 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         if not payment_data:
             try:
                 logger.info("🟡 Tentando PushynPay (Fallback 1)...")
-                payment_data = await create_pix_payment_pushynpay(user_id, amount, description, customer_data)
+                payment_data = await create_pix_payment_pushynpay(user_id, unique_amount, description, customer_data)
                 
                 if payment_data and payment_data.get('qr_code'):
                     gateway_used = "pushynpay"
@@ -2372,7 +2385,7 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         if not payment_data:
             try:
                 logger.info("🟠 Tentando SyncPay Original (Fallback 2)...")
-                payment_data = await create_pix_payment_syncpay_original(user_id, amount, description, customer_data)
+                payment_data = await create_pix_payment_syncpay_original(user_id, unique_amount, description, customer_data)
                 
                 if payment_data and payment_data.get('pix_code'):
                     gateway_used = "syncpay_original"
@@ -2395,7 +2408,7 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         if not payment_data:
             logger.error("❌ TODOS OS GATEWAYS FALHARAM")
             await query.message.reply_text("❌ ERRO: Sistema de pagamento temporariamente indisponível. Tente novamente em alguns minutos.")
-            return
+                return
         
         # ============================================
         # ✅ SUCESSO! PROCESSAR PAGAMENTO
@@ -2423,7 +2436,7 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
             'internal_id': internal_payment_id,
             
             # ✅ Outros dados
-            'amount': amount,
+            'amount': amount,  # Valor original (não o único)
             'plan': description,
             'gateway': gateway_used,
             'pix_code': pix_code,
@@ -2581,26 +2594,33 @@ async def check_payment_status(query, user_id):
         
         logger.info(f"🔄 Iniciando verificação no gateway {gateway}...")
         
+        # ============================================
+        # ⏰ DELAY INICIAL PARA PARADISE PROCESSAR
+        # ============================================
+        if gateway == 'paradise':
+            logger.info("⏰ Aguardando 5 segundos para Paradise processar a transação...")
+            await asyncio.sleep(5)
+        
         while verification_attempts < max_attempts and status is None:
             verification_attempts += 1
             logger.info(f"📡 Tentativa {verification_attempts}/{max_attempts}")
             
             try:
                 if gateway == 'paradise':
-                    paradise = ParadiseGateway()
-                    status = await paradise.check_payment_status(payment_id)
+                paradise = ParadiseGateway()
+                status = await paradise.check_payment_status(payment_id)
                     logger.info(f"📥 Resposta Paradise (tentativa {verification_attempts}): {status}")
                 
-                elif gateway == 'pushynpay':
-                    status = await check_pushynpay_payment_status(payment_id)
+        elif gateway == 'pushynpay':
+                status = await check_pushynpay_payment_status(payment_id)
                     logger.info(f"📥 Resposta PushynPay (tentativa {verification_attempts}): {status}")
                 
-                elif gateway == 'syncpay_original':
-                    syncpay = SyncPayIntegration()
-                    status = syncpay.check_payment_status(payment_id)
+        elif gateway == 'syncpay_original':
+            syncpay = SyncPayIntegration()
+            status = syncpay.check_payment_status(payment_id)
                     logger.info(f"📥 Resposta SyncPay (tentativa {verification_attempts}): {status}")
                 
-                else:
+        else:
                     logger.error(f"❌ Gateway desconhecido: {gateway}")
                     status = 'error_unknown_gateway'
                     break
@@ -2796,7 +2816,7 @@ async def check_payment_status(query, user_id):
             return
         
         # CASO 4: STATUS DESCONHECIDO (BLOQUEAR POR SEGURANÇA)
-        else:
+                else:
             logger.error("=" * 60)
             logger.error(f"❌ STATUS DESCONHECIDO RECEBIDO: {status}")
             logger.error(f"Gateway: {gateway}")
