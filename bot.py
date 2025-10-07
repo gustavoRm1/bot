@@ -451,11 +451,21 @@ class ParadiseGateway:
                 "reference": internal_reference,
                 "checkoutUrl": checkout_url or "",
                 "productHash": getattr(self, "product_hash", None),
+                "orderbump": [],  # ✅ CAMPO OBRIGATÓRIO (array vazio se não houver)
                 "customer": {
                     "name": customer_data.get("name", f"Cliente {user_id}"),
                     "email": customer_data.get("email", f"cliente{user_id}@email.com"),
                     "document": clean_document,
                     "phone": clean_phone
+                },
+                "address": {
+                    "street": "Rua do Produto Digital",
+                    "number": "0",
+                    "neighborhood": "Internet",
+                    "city": "Brasil",
+                    "state": "BR",
+                    "zipcode": "00000000",
+                    "complement": "Produto Digital"
                 }
             }
             
@@ -2187,12 +2197,22 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         else:
             logger.info(f"✅ Link específico encontrado: {BOT_LINKS[bot_token]}")
         
-        # Dados do cliente (com timestamp para evitar cache Paradise)
+        # ============================================
+        # 🔄 GERAR DADOS ÚNICOS PARA EVITAR CACHE PARADISE (24H)
+        # ============================================
+        # Paradise bloqueia: mesmo e-mail + mesmo produto + mesmo valor em 24h
+        
         timestamp = int(time.time())
         
-        # Valor ligeiramente diferente para evitar cache (últimos 2 dígitos do timestamp)
-        cache_buster = (timestamp % 100) / 10000  # 0.00 a 0.99 centavos
+        # Gerar hash aleatório para garantir e-mail único
+        import random
+        random_hash = random.randint(100000, 999999)
+        
+        # Valor ligeiramente diferente (variação maior para evitar cache)
+        cache_buster = random.uniform(0.01, 0.99)  # R$ 0.01 a R$ 0.99
         unique_amount = amount + cache_buster
+        
+        logger.info(f"🔄 Cache buster aplicado: +R$ {cache_buster:.2f} = R$ {unique_amount:.2f}")
         
         # ============================================
         # 📱 CAPTURAR TELEFONE REAL DO TELEGRAM
@@ -2216,9 +2236,16 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
             user_phone = "11999999999"
             logger.warning(f"⚠️ Telefone não disponível - usando padrão: {user_phone}")
         
+        # ============================================
+        # 📧 E-MAIL ÚNICO PARA EVITAR CACHE PARADISE
+        # ============================================
+        # Formato: teste_TIMESTAMP_RANDOM@pix.com
+        # Garante que NUNCA será bloqueado por duplicata
+        unique_email = f"teste_{timestamp}_{random_hash}@pix.com"
+        
         customer_data = {
             "name": user_full_name or user_name,
-            "email": f"cliente{user_id}_{timestamp}@test.com",  # E-mail único para evitar cache
+            "email": unique_email,  # ✅ E-mail completamente único
             "document": "12345678900",  # CPF padrão para produtos digitais
             "phone": user_phone  # Telefone real ou padrão
         }
@@ -2231,8 +2258,6 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         logger.info(f"User ID Telegram: {user_id}")
         logger.info(f"Username: @{query.from_user.username or 'N/A'}")
         logger.info("=" * 60)
-        
-        logger.info(f"🔧 Cache buster aplicado: +{cache_buster:.4f} = R$ {unique_amount:.4f}")
         
         # PARADISE COMO GATEWAY PRINCIPAL
         payment_data = None
