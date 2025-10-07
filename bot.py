@@ -2092,15 +2092,14 @@ async def send_order_bump_mensal(query):
         # Fallback para texto
 
 async def create_payment(query, amount, description, user_id, bot_token=None):
-    """Cria pagamento PIX com fallback simples entre gateways"""
+    """Cria pagamento PIX com fallback simples entre gateways - CORRIGIDO"""
     try:
         logger.info("=" * 60)
-        logger.info("🔵 INICIANDO CRIAÇÃO DE PAGAMENTO")
+        logger.info("🟢 INICIANDO CRIAÇÃO DE PAGAMENTO")
         logger.info(f"User ID: {user_id}")
         logger.info(f"Amount: R$ {amount}")
         logger.info(f"Description: {description}")
         logger.info(f"Bot Token Recebido: {bot_token}")
-        logger.info(f"Bots Ativos: {list(active_bots.keys())}")
         
         # CRÍTICO: Garantir que bot_token seja capturado
         if bot_token is None:
@@ -2130,79 +2129,139 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         payment_data = None
         gateway_used = None
         
-        # Tentar Paradise primeiro (GATEWAY PRINCIPAL)
+        # ============================================
+        # 🔵 TENTAR PARADISE PRIMEIRO (GATEWAY PRINCIPAL)
+        # ============================================
         try:
+            logger.info("🔵 Tentando Paradise (Gateway Principal)...")
+            
             # Obter URL do checkout baseada no bot
             checkout_url = BOT_LINKS.get(bot_token, 'https://oacessoliberado.shop/vip2')
+            logger.info(f"📍 Checkout URL: {checkout_url}")
             
             payment_data = await create_pix_payment_paradise(user_id, amount, description, customer_data, checkout_url)
+            
             if payment_data and payment_data.get('qr_code'):
                 gateway_used = "paradise"
                 logger.info("✅ Paradise funcionou - Gateway Principal")
+                
+                # ============================================
+                # 🔑 CRÍTICO: EXTRAIR O ID CORRETO DO PARADISE
+                # ============================================
+                
+                # O Paradise pode retornar o ID em diferentes campos
+                paradise_transaction_id = (
+                    payment_data.get('id') or 
+                    payment_data.get('transaction_id') or 
+                    payment_data.get('hash') or
+                    payment_data.get('reference')
+                )
+                
+                logger.info("=" * 60)
+                logger.info("🔑 EXTRAINDO ID DA TRANSAÇÃO PARADISE")
+                logger.info(f"Resposta completa do Paradise: {json.dumps(payment_data, indent=2)}")
+                logger.info(f"ID extraído: {paradise_transaction_id}")
+                logger.info("=" * 60)
+                
+                if not paradise_transaction_id:
+                    logger.error("❌ CRÍTICO: Paradise não retornou ID de transação!")
+                    logger.error(f"Campos disponíveis: {list(payment_data.keys())}")
+                    raise Exception("Paradise não retornou ID de transação válido")
+                
+                # Validar que o ID não é apenas um número sequencial
+                if paradise_transaction_id.isdigit() and len(paradise_transaction_id) < 10:
+                    logger.warning(f"⚠️ ID suspeito (muito curto): {paradise_transaction_id}")
+                
+                logger.info(f"✅ ID da transação Paradise confirmado: {paradise_transaction_id}")
+                
             else:
                 raise Exception("Paradise retornou sem código PIX")
+                
         except Exception as e:
             logger.warning(f"Paradise falhou: {e}")
             payment_data = None
         
-        # Se Paradise falhou, tentar PushynPay (FALLBACK 1)
+        # ============================================
+        # 🟡 SE PARADISE FALHOU, TENTAR PUSHYNPAY (FALLBACK 1)
+        # ============================================
         if not payment_data:
             try:
+                logger.info("🟡 Tentando PushynPay (Fallback 1)...")
                 payment_data = await create_pix_payment_pushynpay(user_id, amount, description, customer_data)
+                
                 if payment_data and payment_data.get('qr_code'):
                     gateway_used = "pushynpay"
                     logger.info("✅ PushynPay funcionou - Fallback 1")
+                    
+                    # PushynPay também precisa do ID correto
+                    paradise_transaction_id = payment_data.get('id') or payment_data.get('payment_id')
+                    
+                    if not paradise_transaction_id:
+                        raise Exception("PushynPay não retornou ID de transação válido")
                 else:
                     raise Exception("PushinPay retornou sem código PIX")
+                    
             except Exception as e:
                 logger.warning(f"PushynPay falhou: {e}")
                 payment_data = None
         
-        # Se ambos falharam, tentar SyncPay Original (FALLBACK 2)
+        # ============================================
+        # 🟠 SE AMBOS FALHARAM, TENTAR SYNCPAY (FALLBACK 2)
+        # ============================================
         if not payment_data:
             try:
+                logger.info("🟠 Tentando SyncPay Original (Fallback 2)...")
                 payment_data = await create_pix_payment_syncpay_original(user_id, amount, description, customer_data)
+                
                 if payment_data and payment_data.get('pix_code'):
                     gateway_used = "syncpay_original"
                     logger.info("✅ SyncPay Original funcionou - Fallback 2")
+                    
+                    paradise_transaction_id = payment_data.get('id') or payment_data.get('payment_id')
+                    
+                    if not paradise_transaction_id:
+                        raise Exception("SyncPay não retornou ID de transação válido")
                 else:
                     raise Exception("SyncPay retornou sem código PIX")
+                    
             except Exception as e:
                 logger.warning(f"SyncPay Original falhou: {e}")
                 payment_data = None
         
-        # Se todos os gateways falharam, tentar Paradise novamente
+        # ============================================
+        # ❌ SE TODOS FALHARAM
+        # ============================================
         if not payment_data:
-            logger.error("Todos os gateways falharam, tentando Paradise novamente")
-            
-            # Última tentativa com Paradise
-            try:
-                checkout_url = BOT_LINKS.get(bot_token, 'https://oacessoliberado.shop/vip2')
-                payment_data = await create_pix_payment_paradise(user_id, amount, description, customer_data, checkout_url)
-                if payment_data and payment_data.get('qr_code'):
-                    gateway_used = "paradise_retry"
-                    logger.info("✅ Paradise funcionou na segunda tentativa")
-                else:
-                    raise Exception("Paradise falhou na segunda tentativa")
-            except Exception as e:
-                logger.error(f"Paradise falhou na segunda tentativa: {e}")
-                await query.message.reply_text("ERRO: Sistema de pagamento temporariamente indisponível. Tente novamente em alguns minutos.")
-                return
+            logger.error("❌ TODOS OS GATEWAYS FALHARAM")
+            await query.message.reply_text("❌ ERRO: Sistema de pagamento temporariamente indisponível. Tente novamente em alguns minutos.")
+            return
         
-        # Sucesso! Processar pagamento
+        # ============================================
+        # ✅ SUCESSO! PROCESSAR PAGAMENTO
+        # ============================================
+        
         pix_code = payment_data.get('qr_code') or payment_data.get('pix_code')
         
         if not pix_code:
-            logger.error(f"Código PIX não encontrado")
+            logger.error(f"❌ Código PIX não encontrado na resposta")
             await query.message.reply_text("❌ Erro ao gerar código PIX. Tente novamente.")
             return
         
-        # Gerar ID único para o pagamento
-        payment_id = payment_data.get('id', str(uuid.uuid4()))
+        # ============================================
+        # 🔑 CRIAR OBJETO DE PAGAMENTO COM IDs CORRETOS
+        # ============================================
         
-        # Criar objeto de pagamento com bot_token
+        # Gerar ID interno para referência local
+        internal_payment_id = f'BOT-{user_id[:4] if isinstance(user_id, str) else str(user_id)[:4]}'
+        
         payment_info = {
-            'payment_id': payment_id,
+            # ✅ ID DO GATEWAY (para verificação)
+            'payment_id': paradise_transaction_id,  # ← ID REAL DO PARADISE!
+            
+            # ✅ ID INTERNO (para controle local)
+            'internal_id': internal_payment_id,
+            
+            # ✅ Outros dados
             'amount': amount,
             'plan': description,
             'gateway': gateway_used,
@@ -2211,7 +2270,11 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
             'created_at': datetime.now().isoformat(),
             'user_name': query.from_user.first_name or 'Usuário',
             'user_username': query.from_user.username or '',
-            'bot_token': bot_token  # CRÍTICO: Armazenar bot_token
+            'bot_token': bot_token,
+            
+            # ✅ IDs completos para rastreamento
+            'gateway_transaction_id': paradise_transaction_id,  # ID do gateway
+            'gateway_response': payment_data  # Resposta completa (para debug)
         }
         
         # Armazenar localmente
@@ -2226,39 +2289,37 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         
         logger.info("=" * 60)
         logger.info("✅ PAGAMENTO CRIADO COM SUCESSO")
-        logger.info(f"Payment ID: {payment_id}")
-        logger.info(f"Bot Token Armazenado: {payment_info['bot_token']}")
-        logger.info(f"Dados Completos: {payment_info}")
+        logger.info(f"Internal ID: {internal_payment_id}")
+        logger.info(f"Gateway Transaction ID: {paradise_transaction_id}")
+        logger.info(f"Gateway usado: {gateway_used}")
+        logger.info(f"Bot Token: {bot_token}")
         logger.info("=" * 60)
         
-        # NÃO marcar como comprador ainda - só após confirmação de pagamento
-        # update_user_session(user_id, purchased=True)  # REMOVIDO - só marcar após pagamento confirmado
-        
-        # Mensagem do PIX com bloco de código HTML (sem emojis para Windows)
-        pix_message = f"""PIX GERADO COM SUCESSO!
+        # Mensagem do PIX
+        pix_message = f"""✅ PIX GERADO COM SUCESSO!
 
 <pre>{pix_code}</pre>
 
-Toque no codigo acima para copia-lo facilmente
+💡 Toque no código acima para copiá-lo facilmente
 
-Apos o pagamento, clique no botao abaixo para verificar:"""
+⏰ Após o pagamento, clique no botão abaixo para verificar:"""
         
-        # Botão para verificar pagamento (sem emoji para Windows)
+        # Botão para verificar pagamento
         keyboard = [
-            [InlineKeyboardButton("Verificar Pagamento", callback_data=f"verificar_pagamento_{user_id}")]
+            [InlineKeyboardButton("🔍 Verificar Pagamento", callback_data=f"verificar_pagamento_{user_id}")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        # Enviar mensagem com parse_mode HTML
+        # Enviar mensagem
         await query.message.reply_text(pix_message, reply_markup=reply_markup, parse_mode='HTML')
-        event_logger.info(f"PIX enviado via {gateway_used}")
+        event_logger.info(f"PIX enviado via {gateway_used} - Transaction ID: {paradise_transaction_id}")
         
     except Exception as e:
         logger.error(f"❌ ERRO na create_payment: {str(e)}", exc_info=True)
         try:
-            await query.message.reply_text("ERRO ao processar pagamento. Tente novamente.")
+            await query.message.reply_text("❌ ERRO ao processar pagamento. Tente novamente.")
         except:
-            await query.answer("ERRO ao processar pagamento. Tente novamente.")
+            await query.answer("❌ ERRO ao processar pagamento. Tente novamente.")
 
 # Função create_fallback_payment removida - não queremos PIX manual
 # O sistema agora usa apenas Paradise como gateway principal
