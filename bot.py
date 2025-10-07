@@ -459,7 +459,13 @@ class ParadiseGateway:
                 }
             }
             
-            logger.info(f"📦 Payload Paradise: {json.dumps(payload, indent=2)}")
+            logger.error("=" * 80)
+            logger.error("📤 ENVIANDO PARA PARADISE API")
+            logger.error("=" * 80)
+            logger.error(f"URL: {self.base_url.rstrip('/')}/transaction.php")
+            logger.error(f"Headers: {self._get_headers()}")
+            logger.error(f"Payload: {json.dumps(payload, indent=2)}")
+            logger.error("=" * 80)
 
             resp = requests.post(
                 f"{self.base_url.rstrip('/')}/transaction.php",
@@ -468,7 +474,12 @@ class ParadiseGateway:
                 timeout=self.timeout
             )
 
-            logger.info(f"📥 Paradise Response Status: {getattr(resp, 'status_code', None)}")
+            logger.error("=" * 80)
+            logger.error("📥 RESPOSTA DO PARADISE")
+            logger.error("=" * 80)
+            logger.error(f"Status Code: {getattr(resp, 'status_code', None)}")
+            logger.error(f"Response Text: {getattr(resp, 'text', 'N/A')}")
+            logger.error("=" * 80)
 
             if resp is None:
                 logger.error("❌ Resp is None ao chamar Paradise")
