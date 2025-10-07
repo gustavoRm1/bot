@@ -612,15 +612,15 @@ class ParadiseGateway:
                 # ✅ RETORNAR DADOS DO PIX COM ID CORRETO
                 # ============================================
                 
-                    pix_data = {
+                pix_data = {
                     'id': paradise_transaction_id,  # ✅ ID REAL DO PARADISE
                     'transaction_id': paradise_transaction_id,  # ✅ DUPLICADO PARA GARANTIA
-                        'qr_code': qr_code,
+                    'qr_code': qr_code,
                     'pix_qr_code': qr_code,
-                        'expires_at': transaction_data.get('expires_at'),
-                        'amount': amount,
+                    'expires_at': transaction_data.get('expires_at'),
+                    'amount': amount,
                     'reference': internal_reference,  # Referência interna (só para log)
-                        'gateway': 'paradise',
+                    'gateway': 'paradise',
                     
                     # ✅ RESPOSTA COMPLETA PARA DEBUG
                     'raw_response': response_data
