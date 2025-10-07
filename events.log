@@ -1,103 +1,45 @@
-2025-10-02 17:30:12,480 - Gateways inicializados: 2
-2025-10-02 17:30:12,480 - Iniciando sistema de múltiplos bots
-2025-10-02 17:30:21,718 - Bot inicializado: @liberrarseuacesso001bot
-2025-10-02 17:30:21,746 - Bot inicializado: @lliberaroseuacesso003bot
-2025-10-02 17:30:21,773 - Bot inicializado: @liberaoseuacesso0009bot
-2025-10-02 17:30:21,775 - Bot inicializado: @lliberaroseuacesso002bot
-2025-10-02 17:30:21,775 - Bot inicializado: @liberaoseuacesso0006bot
-2025-10-02 17:30:21,780 - Bot inicializado: @libereiotestedos100kbot
-2025-10-02 17:30:21,789 - Bot inicializado: @liberaoseuacesso0007bot
-2025-10-02 17:30:21,799 - Bot inicializado: @liberrarseuacesso004bot
-2025-10-02 17:30:21,807 - Bot inicializado: @liberrarseuacesso003bot
-2025-10-02 17:30:21,809 - Bot inicializado: @libereseuacesso009bot
-2025-10-02 17:30:21,810 - Bot inicializado: @liberrarseuacesso002bot
-2025-10-02 17:30:22,029 - Bot inicializado: @libereseuacesso006bot
-2025-10-02 17:30:22,030 - Bot inicializado: @botzinhoteste001bot
-2025-10-02 17:30:22,033 - Bot inicializado: @lliberaroseuacesso001bot
-2025-10-02 17:30:22,035 - Bot inicializado: @liberaoseuacesso0008bot
-2025-10-02 17:30:22,035 - Sistema iniciado: 15 bots ativos
-2025-10-02 17:30:22,038 - Iniciando supervisão dos bots
-2025-10-02 17:30:22,039 - Scheduler de downsells iniciado
-2025-10-02 17:34:23,306 - Downsell 0 enviado
-2025-10-02 17:44:24,322 - Downsell 3 enviado
-2025-10-02 17:44:25,545 - Downsell 1 enviado
-2025-10-02 17:48:08,187 - /start executado por Léo (ID: 8196857601)
-2025-10-02 17:48:08,210 - Novo usuário: Léo (ID: 8196857601)
-2025-10-02 17:48:09,497 - Iniciando 26 timers de downsell
-2025-10-02 17:49:25,176 - Pagamento criado: R$ 32.87 - VITALÍCIO + SALA VERMELHA
-2025-10-02 17:49:26,788 - PIX PushynPay criado: R$ 32.87
-2025-10-02 17:49:27,231 - PIX enviado via pushynpay
-2025-10-02 17:50:40,169 - Shutdown iniciado - sinal 2
-2025-10-02 17:50:40,428 - Supervisão finalizada
-2025-10-02 17:59:24,358 - Gateways inicializados: 2
-2025-10-02 17:59:24,358 - Iniciando sistema de múltiplos bots
-2025-10-02 17:59:34,735 - Bot inicializado: @liberrarseuacesso003bot
-2025-10-02 17:59:34,803 - Bot inicializado: @libereiotestedos100kbot
-2025-10-02 17:59:34,803 - Bot inicializado: @botzinhoteste001bot
-2025-10-02 17:59:34,815 - Bot inicializado: @liberrarseuacesso004bot
-2025-10-02 17:59:34,815 - Bot inicializado: @liberaoseuacesso0007bot
-2025-10-02 17:59:34,815 - Bot inicializado: @liberrarseuacesso001bot
-2025-10-02 17:59:34,821 - Bot inicializado: @liberaoseuacesso0009bot
-2025-10-02 17:59:34,821 - Bot inicializado: @libereseuacesso009bot
-2025-10-02 17:59:34,831 - Bot inicializado: @lliberaroseuacesso003bot
-2025-10-02 17:59:34,831 - Bot inicializado: @lliberaroseuacesso002bot
-2025-10-02 17:59:34,831 - Bot inicializado: @lliberaroseuacesso001bot
-2025-10-02 17:59:34,847 - Bot inicializado: @liberaoseuacesso0006bot
-2025-10-02 17:59:35,072 - Bot inicializado: @libereseuacesso006bot
-2025-10-02 17:59:35,072 - Bot inicializado: @liberaoseuacesso0008bot
-2025-10-02 17:59:35,072 - Bot inicializado: @liberrarseuacesso002bot
-2025-10-02 17:59:38,181 - Bot inicializado: @libereOseuacesso0010bot
-2025-10-02 17:59:38,624 - Bot inicializado: @liberaoseuacesso00011bot
-2025-10-02 17:59:38,625 - Sistema iniciado: 17 bots ativos
-2025-10-02 17:59:38,628 - Iniciando supervisão dos bots
-2025-10-02 17:59:38,629 - Scheduler de downsells iniciado
-2025-10-02 17:59:39,085 - Downsell 2 enviado
-2025-10-02 18:29:40,277 - Downsell 3 enviado
-2025-10-02 19:09:01,761 - Shutdown iniciado - sinal 2
-2025-10-02 19:09:02,416 - Supervisão finalizada
-2025-10-02 19:16:19,377 - Gateways inicializados: 2
-2025-10-02 19:16:19,377 - Iniciando sistema de múltiplos bots
-2025-10-02 19:16:29,472 - Bot inicializado: @liberrarseuacesso001bot
-2025-10-02 19:16:29,498 - Bot inicializado: @botzinhoteste001bot
-2025-10-02 19:16:29,511 - Bot inicializado: @libereiotestedos100kbot
-2025-10-02 19:16:29,512 - Bot inicializado: @libereseuacesso009bot
-2025-10-02 19:16:29,530 - Bot inicializado: @liberrarseuacesso003bot
-2025-10-02 19:16:29,549 - Bot inicializado: @liberaoseuacesso0009bot
-2025-10-02 19:16:29,550 - Bot inicializado: @liberaoseuacesso0007bot
-2025-10-02 19:16:29,566 - Bot inicializado: @liberrarseuacesso004bot
-2025-10-02 19:16:29,596 - Bot inicializado: @liberaoseuacesso00011bot
-2025-10-02 19:16:29,790 - Bot inicializado: @lliberaroseuacesso003bot
-2025-10-02 19:16:29,803 - Bot inicializado: @liberaoseuacesso0006bot
-2025-10-02 19:16:29,806 - Bot inicializado: @libereOseuacesso0010bot
-2025-10-02 19:16:29,811 - Bot inicializado: @libereseuacesso006bot
-2025-10-02 19:16:29,828 - Bot inicializado: @lliberaroseuacesso002bot
-2025-10-02 19:16:29,829 - Bot inicializado: @liberrarseuacesso002bot
-2025-10-02 19:16:29,830 - Bot inicializado: @lliberaroseuacesso001bot
-2025-10-02 19:16:29,830 - Bot inicializado: @liberaoseuacesso0008bot
-2025-10-02 19:16:29,830 - Sistema iniciado: 17 bots ativos
-2025-10-02 19:16:29,832 - Iniciando supervisão dos bots
-2025-10-02 19:16:29,832 - Scheduler de downsells iniciado
-2025-10-02 19:56:05,961 - Shutdown iniciado - sinal 2
-2025-10-02 19:56:06,111 - Supervisão finalizada
-2025-10-02 21:13:54,620 - Gateways inicializados: 2
-2025-10-02 21:13:54,620 - Iniciando sistema de múltiplos bots
-2025-10-02 21:14:05,717 - Bot inicializado: @liberrarseuacesso002bot
-2025-10-02 21:14:05,733 - Bot inicializado: @liberaoseuacesso0009bot
-2025-10-02 21:14:05,781 - Bot inicializado: @liberaoseuacesso0008bot
-2025-10-02 21:14:05,781 - Bot inicializado: @botzinhoteste001bot
-2025-10-02 21:14:05,797 - Bot inicializado: @liberrarseuacesso004bot
-2025-10-02 21:14:05,829 - Bot inicializado: @libereseuacesso009bot
-2025-10-02 21:14:05,829 - Bot inicializado: @liberrarseuacesso001bot
-2025-10-02 21:14:05,845 - Bot inicializado: @lliberaroseuacesso003bot
-2025-10-02 21:14:05,877 - Bot inicializado: @liberaoseuacesso0007bot
-2025-10-02 21:14:06,142 - Bot inicializado: @liberaoseuacesso00011bot
-2025-10-02 21:14:06,143 - Bot inicializado: @lliberaroseuacesso002bot
-2025-10-02 21:14:06,144 - Bot inicializado: @libereOseuacesso0010bot
-2025-10-02 21:14:06,144 - Bot inicializado: @lliberaroseuacesso001bot
-2025-10-02 21:14:06,146 - Bot inicializado: @liberaoseuacesso0006bot
-2025-10-02 21:14:06,146 - Bot inicializado: @libereiotestedos100kbot
-2025-10-02 21:14:06,148 - Bot inicializado: @libereseuacesso006bot
-2025-10-02 21:14:06,155 - Bot inicializado: @liberrarseuacesso003bot
-2025-10-02 21:14:06,155 - Sistema iniciado: 17 bots ativos
-2025-10-02 21:14:06,158 - Iniciando supervisão dos bots
-2025-10-02 21:14:06,159 - Scheduler de downsells iniciado
+2025-10-07 00:20:31,094 - Gateways inicializados: 3
+2025-10-07 00:20:32,183 - Iniciando sistema de múltiplos bots
+2025-10-07 00:20:49,452 - Bot inicializado: @libereOseuacesso0010bot
+2025-10-07 00:20:49,457 - Bot inicializado: @lliberaroseuacesso003bot
+2025-10-07 00:20:49,467 - Bot inicializado: @lliberaroseuacesso002bot
+2025-10-07 00:20:49,482 - Bot inicializado: @liberrarseuacesso004bot
+2025-10-07 00:20:49,499 - Bot inicializado: @liberaoseuacesso00011bot
+2025-10-07 00:20:49,501 - Bot inicializado: @acessoliberando004bot
+2025-10-07 00:20:49,503 - Bot inicializado: @libereseuacesso006bot
+2025-10-07 00:20:49,504 - Bot inicializado: @acessoliberando001bot
+2025-10-07 00:20:49,512 - Bot inicializado: @liberaoseuacesso0009bot
+2025-10-07 00:20:49,514 - Bot inicializado: @liberrarseuacesso002bot
+2025-10-07 00:20:49,515 - Bot inicializado: @libereiotestedos100kbot
+2025-10-07 00:20:49,519 - Bot inicializado: @liberrarseuacesso001bot
+2025-10-07 00:20:49,521 - Bot inicializado: @liberrarseuacesso003bot
+2025-10-07 00:20:49,522 - Bot inicializado: @lliberaroseuacesso001bot
+2025-10-07 00:20:50,809 - Bot inicializado: @acessoliberando002bot
+2025-10-07 00:20:51,240 - Bot inicializado: @botzinhoteste001bot
+2025-10-07 00:20:51,240 - Sistema iniciado: 16 bots ativos
+2025-10-07 00:20:51,248 - Iniciando supervisão dos bots
+2025-10-07 00:20:51,249 - Scheduler de downsells iniciado
+2025-10-07 00:21:07,967 - Shutdown iniciado - sinal 2
+2025-10-07 00:23:35,669 - Gateways inicializados: 3
+2025-10-07 00:23:36,447 - Iniciando sistema de múltiplos bots
+2025-10-07 00:23:52,747 - Bot inicializado: @botzinhoteste001bot
+2025-10-07 00:23:52,748 - Bot inicializado: @liberaoseuacesso0009bot
+2025-10-07 00:23:52,749 - Bot inicializado: @liberrarseuacesso004bot
+2025-10-07 00:23:52,754 - Bot inicializado: @lliberaroseuacesso003bot
+2025-10-07 00:23:52,756 - Bot inicializado: @lliberaroseuacesso002bot
+2025-10-07 00:23:52,756 - Bot inicializado: @liberrarseuacesso002bot
+2025-10-07 00:23:52,757 - Bot inicializado: @liberrarseuacesso001bot
+2025-10-07 00:23:52,758 - Bot inicializado: @libereseuacesso006bot
+2025-10-07 00:23:52,759 - Bot inicializado: @acessoliberando002bot
+2025-10-07 00:23:52,764 - Bot inicializado: @liberrarseuacesso003bot
+2025-10-07 00:23:52,764 - Bot inicializado: @libereiotestedos100kbot
+2025-10-07 00:23:52,769 - Bot inicializado: @acessoliberando001bot
+2025-10-07 00:23:52,770 - Bot inicializado: @libereOseuacesso0010bot
+2025-10-07 00:23:52,782 - Bot inicializado: @liberaoseuacesso00011bot
+2025-10-07 00:23:52,783 - Bot inicializado: @lliberaroseuacesso001bot
+2025-10-07 00:23:53,279 - Bot inicializado: @acessoliberando004bot
+2025-10-07 00:23:54,403 - Sistema iniciado: 16 bots ativos
+2025-10-07 00:23:54,407 - Iniciando supervisão dos bots
+2025-10-07 00:23:54,407 - Scheduler de downsells iniciado
+2025-10-07 00:24:00,913 - Shutdown iniciado - sinal 2
+2025-10-07 00:24:01,451 - Supervisão finalizada

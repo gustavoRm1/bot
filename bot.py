@@ -11,6 +11,7 @@ import uuid
 import asyncio
 import json
 import threading
+import re
 from datetime import datetime
 from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
@@ -93,7 +94,12 @@ BOT_LINKS = {
     '8291262027:AAEbD_oJUPfnA5x-ezKgki3rJ59dqkWlJVM': 'https://oacessoliberado.shop/acessoliberado2',  # Token 20
 }
 
-# Configurações PushynPay (URLs CORRETAS)
+# Configurações Paradise (GATEWAY PRINCIPAL)
+PARADISE_API_KEY = 'sk_c3728b109649c7ab1d4e19a61189dbb2b07161d6955b8f20b6023c55b8a9e722'
+PARADISE_BASE_URL = 'https://multi.paradisepags.com/api/v1'
+PARADISE_PRODUCT_HASH = 'prod_6c60b3dd3ae2c63e'
+
+# Configurações PushynPay (FALLBACK)
 PUSHYNPAY_TOKEN = '48868|59JBZdNBBZRHY1dI0sxmXvcj8LXWcJnV3oeRj8Vhefd226e7'
 PUSHYNPAY_BASE_URL_SANDBOX = 'https://api-sandbox.pushinpay.com.br'
 PUSHYNPAY_BASE_URL_PRODUCTION = 'https://api.pushinpay.com.br'
@@ -111,25 +117,35 @@ SYNCPAY_BASE_URL = 'https://api.syncpayments.com.br'
 
 # Sistema de múltiplos gateways
 GATEWAYS = {
+    'paradise': {
+        'name': 'Paradise (Principal)',
+        'base_url': PARADISE_BASE_URL,
+        'api_key': PARADISE_API_KEY,
+        'product_hash': PARADISE_PRODUCT_HASH,
+        'active': True,
+        'priority': 1,  # PRIORIDADE MÁXIMA - Gateway Principal
+        'max_amount': 10000.00,
+        'min_amount': 0.50
+    },
+    'pushynpay': {
+        'name': 'PushynPay (Fallback 1)',
+        'base_url': PUSHYNPAY_BASE_URL_SANDBOX,  # Usar sandbox para testes
+        'token': PUSHYNPAY_TOKEN,
+        'active': True,  # ATIVADO - URLs corretas
+        'priority': 2,  # Fallback 1
+        'max_amount': 10000.00,
+        'min_amount': 0.50,  # Valor mínimo R$ 0,50 (50 centavos)
+        'endpoints': PUSHYNPAY_ENDPOINTS
+    },
     'syncpay_original': {
-        'name': 'SyncPay Original',
+        'name': 'SyncPay Original (Fallback 2)',
         'base_url': SYNCPAY_BASE_URL,
         'client_id': SYNCPAY_CLIENT_ID,
         'client_secret': SYNCPAY_CLIENT_SECRET,
         'active': True,
-        'priority': 1,
+        'priority': 3,  # Fallback 2
         'max_amount': 10000.00,
         'min_amount': 1.00
-    },
-    'pushynpay': {
-        'name': 'PushynPay',
-        'base_url': PUSHYNPAY_BASE_URL_SANDBOX,  # Usar sandbox para testes
-        'token': PUSHYNPAY_TOKEN,
-        'active': True,  # ATIVADO - URLs corretas
-        'priority': 1,  # Prioridade alta
-        'max_amount': 10000.00,
-        'min_amount': 0.50,  # Valor mínimo R$ 0,50 (50 centavos)
-        'endpoints': PUSHYNPAY_ENDPOINTS
     }
 }
 
@@ -389,6 +405,289 @@ def mark_response_sent(user_id):
     user_requests[user_id]['last_response'] = current_time
     user_requests[user_id]['pending_request'] = False
 
+class ParadiseGateway:
+    """Integração com Paradise como Gateway Principal"""
+    
+    def __init__(self):
+        self.api_key = PARADISE_API_KEY
+        self.base_url = PARADISE_BASE_URL
+        self.product_hash = PARADISE_PRODUCT_HASH
+        self.timeout = 30
+        
+    def _get_headers(self):
+        """Retorna headers para requisições Paradise"""
+        return {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-API-Key': self.api_key
+        }
+    
+    async def create_payment(self, amount, description, customer_data, user_id, checkout_url=None):
+        """Cria um pagamento PIX via Paradise"""
+        try:
+            logger.info(f"🏝️ Criando pagamento Paradise: R$ {amount}")
+            
+            # Gerar referência única
+            reference = f'BOT-{user_id}-{int(time.time())}'
+            
+            # Preparar dados do cliente
+            clean_document = re.sub(r'\D', '', customer_data.get('document', '12345678900'))
+            clean_phone = re.sub(r'\D', '', customer_data.get('phone', '11999999999'))
+            
+            # Payload para Paradise API (SEGUINDO EXATAMENTE O PHP)
+            payload = {
+                "amount": round(amount * 100),  # Paradise espera em centavos
+                "description": description,
+                "reference": reference,
+                "checkoutUrl": checkout_url or '',  # Obrigatório mesmo se vazio
+                "productHash": self.product_hash,
+                "orderbump": [],  # Array vazio como no PHP
+                "customer": {
+                    'name': customer_data.get('name', f'Cliente {user_id}'),
+                    'email': customer_data.get('email', f'cliente{user_id}@email.com'),
+                    'document': clean_document,
+                    'phone': clean_phone
+                }
+            }
+            
+            # Adicionar endereço padrão para produtos digitais (como no PHP)
+            payload["address"] = {
+                "street": "Rua do Produto Digital",
+                "number": "0",
+                "neighborhood": "Internet", 
+                "city": "Brasil",
+                "state": "BR",
+                "zipcode": "00000000",
+                "complement": "N/A"
+            }
+            
+            # Fazer requisição para Paradise
+            response = requests.post(
+                f"{self.base_url}/transaction.php",
+                json=payload,
+                headers=self._get_headers(),
+                timeout=self.timeout
+            )
+            
+            logger.info(f"Paradise Response Status: {response.status_code}")
+            
+            if response.status_code >= 200 and response.status_code < 300:
+                response_data = response.json()
+                logger.info(f"Paradise Response Data: {response_data}")
+                
+                # Processar resposta EXATAMENTE como no PHP
+                transaction_data = response_data.get('transaction', response_data)
+                
+                # Extrair QR Code (pode estar em diferentes campos)
+                qr_code = (transaction_data.get('qr_code') or 
+                          transaction_data.get('pix_qr_code') or
+                          response_data.get('qr_code') or
+                          response_data.get('pix_qr_code'))
+                
+                if qr_code:
+                    # Sucesso! Retornar dados do PIX no formato esperado
+                    pix_data = {
+                        'id': transaction_data.get('id', reference),
+                        'qr_code': qr_code,
+                        'pix_qr_code': qr_code,  # Compatibilidade
+                        'expires_at': transaction_data.get('expires_at'),
+                        'amount': amount,
+                        'reference': reference,
+                        'gateway': 'paradise',
+                        'transaction_id': transaction_data.get('id', reference)
+                    }
+                    
+                    logger.info(f"✅ Paradise PIX criado com sucesso: {reference}")
+                    logger.info(f"QR Code: {qr_code[:50]}...")
+                    return pix_data
+                else:
+                    logger.error(f"Paradise retornou sem QR Code")
+                    logger.error(f"Response: {response_data}")
+                    return None
+            else:
+                logger.error(f"Paradise API Error {response.status_code}: {response.text}")
+                return None
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"❌ Erro de conexão Paradise: {e}")
+            return None
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ Erro ao decodificar JSON Paradise: {e}")
+            logger.error(f"Response text: {response.text if 'response' in locals() else 'N/A'}")
+            return None
+        except Exception as e:
+            logger.error(f"❌ Erro geral Paradise: {e}")
+            logger.error(f"Exception type: {type(e).__name__}")
+            return None
+    
+    async def check_payment_status(self, transaction_id):
+        """Verifica status do pagamento no Paradise"""
+        try:
+            logger.info(f"🔍 Verificando status Paradise: {transaction_id}")
+            
+            # Usar endpoint correto como no PHP
+            response = requests.get(
+                f"{self.base_url}/check_status.php",
+                params={'hash': transaction_id, '_': int(time.time())},  # Cache buster
+                headers=self._get_headers(),
+                timeout=self.timeout
+            )
+            
+            logger.info(f"Paradise Status Response: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                logger.info(f"Paradise Status Data: {data}")
+                
+                # Verificar diferentes formatos de resposta
+                payment_status = (data.get('payment_status') or 
+                                data.get('status') or 
+                                data.get('state'))
+                
+                if payment_status == 'paid':
+                    logger.info(f"✅ Pagamento Paradise confirmado: {transaction_id}")
+                    return 'paid'
+                else:
+                    logger.info(f"⏳ Pagamento Paradise pendente: {transaction_id} (status: {payment_status})")
+                    return 'pending'
+            else:
+                logger.warning(f"Paradise status check failed: {response.status_code} - {response.text}")
+                return 'pending'
+                
+        except Exception as e:
+            logger.error(f"Erro ao verificar status Paradise: {e}")
+            return 'pending'
+    
+    def validate_webhook_signature(self, payload, signature):
+        """Valida assinatura do webhook Paradise (se implementado)"""
+        # Por enquanto, aceitar todos os webhooks
+        # Em produção, implementar validação de assinatura
+        return True
+    
+    async def process_webhook(self, webhook_data):
+        """Processa webhook de confirmação do Paradise"""
+        try:
+            logger.info(f"🔔 Webhook Paradise recebido: {webhook_data}")
+            
+            # Extrair dados do webhook
+            transaction_id = webhook_data.get('id') or webhook_data.get('transaction_id')
+            status = webhook_data.get('status') or webhook_data.get('payment_status')
+            
+            if not transaction_id or not status:
+                logger.warning("Webhook Paradise sem dados suficientes")
+                return False
+            
+            # Procurar pagamento pendente
+            payment_found = False
+            for user_id, payment_info in pending_payments.items():
+                if (payment_info.get('payment_id') == transaction_id or 
+                    payment_info.get('gateway_payment_id') == transaction_id):
+                    
+                    if status == 'paid':
+                        # Pagamento confirmado!
+                        logger.info(f"💰 Pagamento Paradise confirmado via webhook: {transaction_id}")
+                        
+                        # Atualizar status
+                        payment_info['status'] = 'paid'
+                        payment_info['confirmed_at'] = datetime.now().isoformat()
+                        
+                        # Enviar notificação para o usuário
+                        bot_token = payment_info.get('bot_token')
+                        if bot_token and bot_token in active_bots:
+                            bot = active_bots[bot_token]['bot']
+                            try:
+                                await bot.send_message(
+                                    chat_id=user_id,
+                                    text="✅ **PAGAMENTO CONFIRMADO!**\n\n🎉 Seu acesso foi liberado com sucesso!\n\n🔗 Clique no botão abaixo para acessar:",
+                                    parse_mode='HTML'
+                                )
+                                
+                                # Enviar link de acesso
+                                access_link = BOT_LINKS.get(bot_token, 'https://oacessoliberado.shop/vip2')
+                                keyboard = [[InlineKeyboardButton("🚀 ACESSAR AGORA", url=access_link)]]
+                                reply_markup = InlineKeyboardMarkup(keyboard)
+                                
+                                await bot.send_message(
+                                    chat_id=user_id,
+                                    text="🎁 **SEU ACESSO ESTÁ PRONTO!**",
+                                    reply_markup=reply_markup,
+                                    parse_mode='HTML'
+                                )
+                                
+                                # Atualizar estatísticas
+                                update_stats('confirmed_payments')
+                                update_stats('total_payments')
+                                
+                                # Remover pagamento pendente
+                                del pending_payments[user_id]
+                                
+                                logger.info(f"✅ Usuário {user_id} notificado sobre pagamento confirmado")
+                                
+                            except Exception as e:
+                                logger.error(f"Erro ao notificar usuário {user_id}: {e}")
+                        
+                        payment_found = True
+                        break
+            
+            if not payment_found:
+                logger.warning(f"Pagamento Paradise não encontrado: {transaction_id}")
+            
+            return payment_found
+            
+        except Exception as e:
+            logger.error(f"Erro ao processar webhook Paradise: {e}")
+            return False
+    
+    async def test_connection(self):
+        """Testa conexão com Paradise API"""
+        try:
+            logger.info("🧪 Testando conexão com Paradise API...")
+            
+            # Fazer uma requisição simples para testar
+            test_payload = {
+                "amount": 100,  # R$ 1,00 em centavos
+                "description": "Teste de Conexão",
+                "reference": f"TEST-{int(time.time())}",
+                "checkoutUrl": "",
+                "productHash": self.product_hash,
+                "orderbump": [],
+                "customer": {
+                    'name': 'Teste Bot',
+                    'email': 'teste@bot.com',
+                    'document': '12345678900',
+                    'phone': '11999999999'
+                },
+                "address": {
+                    "street": "Rua do Teste",
+                    "number": "0",
+                    "neighborhood": "Teste",
+                    "city": "Teste",
+                    "state": "BR",
+                    "zipcode": "00000000",
+                    "complement": "Teste"
+                }
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/transaction.php",
+                json=test_payload,
+                headers=self._get_headers(),
+                timeout=10
+            )
+            
+            logger.info(f"🧪 Teste Paradise - Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                logger.info("✅ Conexão Paradise OK")
+                return True
+            else:
+                logger.error(f"❌ Teste Paradise falhou: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Erro no teste Paradise: {e}")
+            return False
+
 class SyncPayIntegration:
     """Integração profissional com SyncPay"""
     
@@ -602,6 +901,34 @@ async def check_pushynpay_payment_status(payment_id):
         # Em caso de erro geral, retornar pending para permitir nova tentativa
         return 'pending'
 
+async def create_pix_payment_paradise(user_id, amount, plan_name, customer_data, checkout_url=None):
+    """Cria um pagamento PIX usando Paradise como gateway principal"""
+    try:
+        logger.info(f"🏝️ Iniciando criação de PIX via Paradise")
+        
+        # Instanciar gateway Paradise
+        paradise = ParadiseGateway()
+        
+        # Criar pagamento
+        pix_data = await paradise.create_payment(
+            amount=amount,
+            description=plan_name,
+            customer_data=customer_data,
+            user_id=user_id,
+            checkout_url=checkout_url
+        )
+        
+        if pix_data and pix_data.get('qr_code'):
+            logger.info(f"✅ Paradise PIX criado com sucesso: {pix_data.get('id')}")
+            return pix_data
+        else:
+            logger.error("❌ Paradise retornou sem código PIX")
+            return None
+            
+    except Exception as e:
+        logger.error(f"❌ Erro na criação do PIX Paradise: {e}")
+        return None
+
 async def create_pix_payment_pushynpay(user_id, amount, plan_name, customer_data):
     """Cria um pagamento PIX usando PushynPay com formato correto da API"""
     payment_id = str(uuid.uuid4())
@@ -759,7 +1086,9 @@ async def create_pix_payment_with_fallback(user_id, amount, plan_name, customer_
         try:
             # Tentativa de criação de PIX
             
-            if current_gateway == 'pushynpay':
+            if current_gateway == 'paradise':
+                result = await create_pix_payment_paradise(user_id, amount, plan_name, customer_data)
+            elif current_gateway == 'pushynpay':
                 result = await create_pix_payment_pushynpay(user_id, amount, plan_name, customer_data)
             elif current_gateway == 'syncpay_original':
                 result = await create_pix_payment_syncpay_original(user_id, amount, plan_name, customer_data)
@@ -864,7 +1193,7 @@ async def setup_bot_handlers(application, token):
         
         # Mensagem principal
         message_text = """🚷 𝗩𝗢𝗖Ê 𝗔𝗖𝗔𝗕𝗢𝗨 𝗗𝗘 𝗘𝗡𝗧𝗥𝗔𝗥 𝗡𝗢 𝗔𝗕𝗜𝗦𝗠𝗢 — 𝗘 𝗔𝗤𝗨𝗜 𝗡Ã𝗢 𝗘𝗫𝗜𝗦𝗧𝗘 𝗩𝗢𝗟𝗧𝗔.
-💎 O maior e mais pr🔞curad🔞 Rateio de Grupos VIPs do Telegram está aberto… mas não por muito tempo.
+💎 O maior e mais pr🔞ibid🔞 Rateio de Grupos VIPs do Telegram está aberto… mas não por muito tempo.
 
 🔞 OnlyF4ns, Privacy, Close Friends VAZADOS
 🔞 Famosas, Nov!nhas +18, Amadoras & Milf's insaciáveis
@@ -879,7 +1208,7 @@ async def setup_bot_handlers(application, token):
 ❌ Aqui não tem "achismos": são os vídeos que NINGUÉM teria coragem de postar publicamente.
 👉 Se você sair agora, nunca mais encontra esse conteúdo.
 
-🎁 𝗕ô𝗻𝘂𝘀 𝗦ó 𝗛𝗼𝗷𝗲: 𝗮𝗼 𝗮𝘀𝘀𝗶𝗻𝗮𝗿, 𝘃𝗼𝗰ê 𝗿𝗲𝗰𝗲𝗯𝗲 𝗮𝗰𝗲𝘀𝘀𝗼 𝘀𝗲𝗰𝗿𝗲𝘁𝗼 𝗮 +𝟰 𝗚𝗿𝘂𝗽𝗼𝘀 𝗩𝗜𝗣'𝘀 𝗼𝗰𝘂𝗹𝘁𝗼𝘀 (𝗻𝗼𝘃!𝗻𝗵𝟰𝘀 +𝟭𝟴, 𝗰𝗮𝘀𝗮𝗱𝗮𝘀 𝗿𝗲𝗮𝗶𝘀, 𝗳𝗹@𝗴𝗿@𝘀 & 𝗺í𝗱𝗶𝗮𝘀 𝗲𝘅𝗰𝗹𝘂í𝗱𝗮𝘀 𝗱𝗮 𝘄𝟯𝗯)."""
+🎁 𝗕ô𝗻𝘂𝘀 𝗦ó 𝗛𝗼𝗷𝗲: 𝗮𝗼 𝗮𝘀𝘀𝗶𝗻𝗮𝗿, 𝘃𝗼𝗰ê 𝗿𝗲𝗰𝗲𝗯𝗲 𝗮𝗰𝗲𝘀𝘀𝗼 𝘀𝗲𝗰𝗿𝗲𝘁𝗼 𝗮 +𝟰 𝗚𝗿𝘂𝗽𝗼𝘀 𝗩𝗜𝗣'𝘀 𝗼𝗰𝘂𝗹𝘁𝗼𝘀 (𝗻𝗼𝘃!𝗻𝗵𝟰𝘀, 𝗰𝗮𝘀𝗮𝗱𝗮𝘀 𝗿𝗲𝗮𝗶𝘀, 𝗳𝗹𝗮𝗴𝗿𝗮𝘀 𝗽𝗿🔞𝗶𝗯𝗶𝗱𝗼𝘀 & 𝗺í𝗱𝗶𝗮𝘀 𝗱𝗮 𝗱4️⃣ 𝗿𝗸 𝘄𝟯𝗯)."""
         
         # Botões
         keyboard = [
@@ -889,7 +1218,7 @@ async def setup_bot_handlers(application, token):
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         # Enviar vídeo principal via link
-        video_link = "https://t.me/MIDIASBOTIS/5"  # Link do vídeo principal
+        video_link = "https://t.me/MDMDMDMDAA2/35"  # Link do vídeo principal
         
         try:
             await update.message.reply_video(
@@ -1758,10 +2087,10 @@ async def send_order_bump(query):
     order_bump_text = """📦 DESBLOQUEAR SALA VERMELHA 📦
 
 🚷 Arquivos deletados do servidor principal e salvos só pra essa liberação.
-✅ Amador das faveladas
-✅ Amador com o pai depois do banho ⭐️🤫
-✅ Vídeos que muitos procuram várias países.
-✅ Conteúdo de cameras com áudio original.
+✅ Amador das faveladinhas
+✅ Amador com o papai depois do banho ⭐️🤫
+✅ Vídeos que já foi banido em vários países.
+✅ Conteúdo de cameras escondidas com áudio original.
 💥 Ative agora e leva 1 grupo s3cr3to bônus."""
     
     # Botões do order bump
@@ -1772,7 +2101,7 @@ async def send_order_bump(query):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Enviar vídeo do order bump via link
-    video_link = "https://t.me/MIDIASBOTIS/4"  # Link do order bump vitalício
+    video_link = "https://t.me/MDMDMDMDAA2/3"  # Link do order bump vitalício
     
     try:
             await query.message.reply_video(
@@ -1791,11 +2120,11 @@ async def send_order_bump_mensal(query):
     # Mensagem do order bump mensal (PACOTE SOMBRIO)
     order_bump_text = """📦 DESBLOQUEAR PACOTE SOMBRIO 📦
 
-🚷 Arquivos esquecidos e salvos só pra essa liberação.
-✅ Amador das faveladas
-✅ Amador com o pai depois do banho ⭐️🤫
-✅ Vídeos que já foi esquecidos em vários países.
-✅ Conteúdo de cameras com áudio original.
+🚷 Arquivos deletados do servidor principal e salvos só pra essa liberação.
+✅ Amador das faveladinhas
+✅ Amador com o papai depois do banho ⭐️🤫
+✅ Vídeos que já foi banido em vários países.
+✅ Conteúdo de cameras escondidas com áudio original.
 💥 Ative agora e leva 1 grupo s3cr3to bônus."""
     
     # Botões do order bump mensal
@@ -1806,7 +2135,7 @@ async def send_order_bump_mensal(query):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Enviar vídeo do order bump mensal via link
-    video_link = "https://t.me/MIDIASBOTIS/3"  # Link do order bump mensal
+    video_link = "https://t.me/MDMDMDMDAA2/4"  # Link do order bump mensal
     
     try:
             await query.message.reply_video(
@@ -1855,36 +2184,68 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
             "document": "12345678900"
         }
         
-        # Tentar PushinPay primeiro
+        # PARADISE COMO GATEWAY PRINCIPAL
+        payment_data = None
+        gateway_used = None
+        
+        # Tentar Paradise primeiro (GATEWAY PRINCIPAL)
         try:
-            payment_data = await create_pix_payment_pushynpay(user_id, amount, description, customer_data)
+            # Obter URL do checkout baseada no bot
+            checkout_url = BOT_LINKS.get(bot_token, 'https://oacessoliberado.shop/vip2')
+            
+            payment_data = await create_pix_payment_paradise(user_id, amount, description, customer_data, checkout_url)
             if payment_data and payment_data.get('qr_code'):
-                gateway_used = "pushynpay"
-                logger.info("✅ PushynPay funcionou")
+                gateway_used = "paradise"
+                logger.info("✅ Paradise funcionou - Gateway Principal")
             else:
-                raise Exception("PushinPay retornou sem código PIX")
+                raise Exception("Paradise retornou sem código PIX")
         except Exception as e:
-            logger.warning(f"PushynPay falhou: {e}")
+            logger.warning(f"Paradise falhou: {e}")
             payment_data = None
         
-        # Se PushinPay falhou, tentar SyncPay Original
+        # Se Paradise falhou, tentar PushynPay (FALLBACK 1)
+        if not payment_data:
+            try:
+                payment_data = await create_pix_payment_pushynpay(user_id, amount, description, customer_data)
+                if payment_data and payment_data.get('qr_code'):
+                    gateway_used = "pushynpay"
+                    logger.info("✅ PushynPay funcionou - Fallback 1")
+                else:
+                    raise Exception("PushinPay retornou sem código PIX")
+            except Exception as e:
+                logger.warning(f"PushynPay falhou: {e}")
+                payment_data = None
+        
+        # Se ambos falharam, tentar SyncPay Original (FALLBACK 2)
         if not payment_data:
             try:
                 payment_data = await create_pix_payment_syncpay_original(user_id, amount, description, customer_data)
                 if payment_data and payment_data.get('pix_code'):
                     gateway_used = "syncpay_original"
-                    logger.info("✅ SyncPay Original funcionou")
+                    logger.info("✅ SyncPay Original funcionou - Fallback 2")
                 else:
                     raise Exception("SyncPay retornou sem código PIX")
             except Exception as e:
                 logger.warning(f"SyncPay Original falhou: {e}")
                 payment_data = None
         
-        # Se ambos falharam, usar fallback manual
+        # Se todos os gateways falharam, tentar Paradise novamente
         if not payment_data:
-            logger.error("Ambos os gateways falharam, usando PIX manual")
-            await create_fallback_payment(query, amount, description, user_id)
-            return
+            logger.error("Todos os gateways falharam, tentando Paradise novamente")
+            
+            # Última tentativa com Paradise
+            try:
+                checkout_url = BOT_LINKS.get(bot_token, 'https://oacessoliberado.shop/vip2')
+                payment_data = await create_pix_payment_paradise(user_id, amount, description, customer_data, checkout_url)
+                if payment_data and payment_data.get('qr_code'):
+                    gateway_used = "paradise_retry"
+                    logger.info("✅ Paradise funcionou na segunda tentativa")
+                else:
+                    raise Exception("Paradise falhou na segunda tentativa")
+            except Exception as e:
+                logger.error(f"Paradise falhou na segunda tentativa: {e}")
+                await query.message.reply_text("ERRO: Sistema de pagamento temporariamente indisponível. Tente novamente em alguns minutos.")
+                return
         
         # Sucesso! Processar pagamento
         pix_code = payment_data.get('qr_code') or payment_data.get('pix_code')
@@ -1931,18 +2292,18 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         # Marcar usuário como comprador
         update_user_session(user_id, purchased=True)
         
-        # Mensagem do PIX com bloco de código HTML
-        pix_message = f"""💠 Pague via Pix Copia e Cola:
+        # Mensagem do PIX com bloco de código HTML (sem emojis para Windows)
+        pix_message = f"""PIX GERADO COM SUCESSO!
 
 <pre>{pix_code}</pre>
 
-👆 Toque no código acima para copiá-lo facilmente
+Toque no codigo acima para copia-lo facilmente
 
-‼️ Após o pagamento, clique no botão abaixo para verificar:"""
+Apos o pagamento, clique no botao abaixo para verificar:"""
         
-        # Botão para verificar pagamento
+        # Botão para verificar pagamento (sem emoji para Windows)
         keyboard = [
-            [InlineKeyboardButton("✅ Verificar Pagamento", callback_data=f"verificar_pagamento_{user_id}")]
+            [InlineKeyboardButton("Verificar Pagamento", callback_data=f"verificar_pagamento_{user_id}")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
@@ -1953,51 +2314,12 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
     except Exception as e:
         logger.error(f"❌ ERRO na create_payment: {str(e)}", exc_info=True)
         try:
-            await query.message.reply_text("❌ Erro ao processar pagamento. Tente novamente.")
+            await query.message.reply_text("ERRO ao processar pagamento. Tente novamente.")
         except:
-            await query.answer("❌ Erro ao processar pagamento. Tente novamente.")
+            await query.answer("ERRO ao processar pagamento. Tente novamente.")
 
-async def create_fallback_payment(query, amount, description, user_id):
-    """Fallback: cria PIX manual quando SyncPay falha"""
-    try:
-        # Gerar PIX manual simples
-        pix_code = f"00020126360014BR.GOV.BCB.PIX0114+5511999999999520400005303986540{amount:.2f}5802BR5925GRMPAY BOT TELEGRAM6009SAO PAULO62070503***6304"
-        
-        # Armazenar dados do pagamento (sem ID da SyncPay)
-        pending_payments[user_id] = {
-            'payment_id': f"manual_{user_id}_{int(time.time())}",
-            'amount': amount,
-            'plan': description,
-            'manual': True
-        }
-        
-        pix_message = f"""💠 PIX MANUAL - {description}
-
-💰 Valor: R$ {amount:.2f}
-
-📱 Para pagar:
-1. Abra seu app de banco
-2. Escaneie o QR Code ou copie o código PIX
-3. Confirme o pagamento
-4. Clique em "Verificar Pagamento"
-
-‼️ Após o pagamento, clique no botão abaixo:"""
-        
-        keyboard = [
-            [InlineKeyboardButton("✅ Verificar Pagamento", callback_data=f"verificar_pagamento_{user_id}")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        # Enviar nova mensagem em vez de editar
-        await query.message.reply_text(pix_message, reply_markup=reply_markup, parse_mode='HTML')
-        event_logger.info(f"PIX manual criado")
-        
-    except Exception as e:
-        logger.error(f"Erro no fallback: {e}")
-        try:
-            await query.message.reply_text("❌ Sistema temporariamente indisponível. Tente novamente em alguns minutos.")
-        except:
-            await query.answer("❌ Sistema temporariamente indisponível. Tente novamente em alguns minutos.")
+# Função create_fallback_payment removida - não queremos PIX manual
+# O sistema agora usa apenas Paradise como gateway principal
 
 async def check_payment_status(query, user_id):
     """Verifica status do pagamento e envia link específico"""
@@ -2069,7 +2391,12 @@ async def check_payment_status(query, user_id):
         # Verificar status baseado no gateway usado
         status = None
         
-        if gateway == 'pushynpay':
+        if gateway == 'paradise':
+            # Verificar via Paradise (GATEWAY PRINCIPAL)
+            paradise = ParadiseGateway()
+            status = await paradise.check_payment_status(payment_id)
+            logger.info(f"🔍 Status Paradise: {status}")
+        elif gateway == 'pushynpay':
             # Verificar via PushynPay com múltiplas tentativas
             max_attempts = 3
             for attempt in range(max_attempts):
@@ -2957,29 +3284,111 @@ async def supervise_bots():
     
     event_logger.info("Supervisão finalizada")
 
+# Servidor Flask para webhooks
+from flask import Flask, request, jsonify
+import threading
+
+app = Flask(__name__)
+
+@app.route('/webhook/paradise', methods=['POST'])
+def paradise_webhook():
+    """Endpoint para receber webhooks do Paradise"""
+    try:
+        webhook_data = request.get_json()
+        if not webhook_data:
+            return jsonify({'error': 'No JSON data'}), 400
+        
+        # Processar webhook de forma assíncrona
+        paradise = ParadiseGateway()
+        
+        # Executar em thread separada para não bloquear
+        def process_webhook():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(paradise.process_webhook(webhook_data))
+            loop.close()
+        
+        thread = threading.Thread(target=process_webhook)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({'status': 'received'}), 200
+        
+    except Exception as e:
+        logger.error(f"Erro no webhook Paradise: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'bots_active': len(active_bots),
+        'gateways_active': len([g for g in gateway_status.values() if g['status'] == 'active'])
+    }), 200
+
+def run_flask_server():
+    """Executa servidor Flask em thread separada"""
+    try:
+        app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
+    except Exception as e:
+        logger.error(f"Erro no servidor Flask: {e}")
+
 async def main():
     """Função principal - Sistema Multi-Bot Assíncrono"""
-    print("="*70)
-    print("🤖 SISTEMA MULTI-BOT TELEGRAM - ALTO TRÁFEGO")
-    print("="*70)
-    print("✅ Múltiplos bots rodando simultaneamente")
-    print("✅ Troca automática quando um bot cai")
-    print("✅ Distribuição de carga entre bots")
-    print("✅ Monitoramento em tempo real")
-    print("="*70)
+    try:
+        print("="*70)
+        print("SISTEMA MULTI-BOT TELEGRAM - ALTO TRAFEGO")
+        print("PARADISE GATEWAY INTEGRADO COMO PRINCIPAL")
+        print("="*70)
+        print("OK - Multiplos bots rodando simultaneamente")
+        print("OK - Troca automatica quando um bot cai")
+        print("OK - Distribuicao de carga entre bots")
+        print("OK - Paradise como gateway principal")
+        print("OK - Sistema de fallback automatico")
+        print("OK - Webhooks para confirmacoes instantaneas")
+        print("OK - Monitoramento em tempo real")
+        print("="*70)
+    except UnicodeEncodeError:
+        # Fallback para sistemas sem suporte Unicode
+        print("="*70)
+        print("SISTEMA MULTI-BOT TELEGRAM - ALTO TRAFEGO")
+        print("PARADISE GATEWAY INTEGRADO COMO PRINCIPAL")
+        print("="*70)
+        print("OK - Multiplos bots rodando simultaneamente")
+        print("OK - Troca automatica quando um bot cai")
+        print("OK - Distribuicao de carga entre bots")
+        print("OK - Paradise como gateway principal")
+        print("OK - Sistema de fallback automatico")
+        print("OK - Webhooks para confirmacoes instantaneas")
+        print("OK - Monitoramento em tempo real")
+        print("="*70)
     
     # Verificar se há tokens válidos
     valid_tokens = [token for token in BOT_TOKENS if token and not token.startswith('SEU_TOKEN')]
     
     if not valid_tokens:
-        logger.error("❌ Nenhum token válido encontrado!")
-        logger.info("💡 Adicione tokens válidos na lista BOT_TOKENS")
+        logger.error("Nenhum token valido encontrado!")
+        logger.info("Adicione tokens validos na lista BOT_TOKENS")
         return
     
-    logger.info(f"📋 {len(valid_tokens)} token(s) válido(s) encontrado(s)")
+    logger.info(f"{len(valid_tokens)} token(s) valido(s) encontrado(s)")
     
     # Inicializar sistema de gateways
     initialize_gateways()
+    
+    # Testar conexão Paradise
+    paradise = ParadiseGateway()
+    paradise_test = await paradise.test_connection()
+    if paradise_test:
+        logger.info("✅ Paradise API conectado com sucesso")
+    else:
+        logger.warning("⚠️ Paradise API com problemas - usando fallbacks")
+    
+    # Iniciar servidor Flask para webhooks
+    flask_thread = threading.Thread(target=run_flask_server, daemon=True)
+    flask_thread.start()
+    logger.info("🌐 Servidor Flask iniciado na porta 5000 para webhooks")
     
     # Inicializar todos os bots
     success = await start_all_bots()
@@ -2991,23 +3400,23 @@ async def main():
     logger.info(f"🚀 Sistema iniciado com {len(active_bots)} bot(s) ativo(s)")
     
     # Exibir status dos bots
-    print("\n📊 STATUS DOS BOTS:")
+    print("\nSTATUS DOS BOTS:")
     print("-" * 50)
     for token, bot_info in active_bots.items():
-        status = "✅ Ativo" if bot_info['status'] == 'active' else "❌ Falhado"
+        status = "ATIVO" if bot_info['status'] == 'active' else "FALHADO"
         print(f"{status} - {token[:20]}...")
     
     # Exibir status dos gateways
-    print("\n💳 STATUS DOS GATEWAYS:")
+    print("\nSTATUS DOS GATEWAYS:")
     print("-" * 50)
     for gateway_id, status in gateway_status.items():
         gateway_name = GATEWAYS[gateway_id]['name']
         
         if status['status'] == 'active':
-            status_icon = "✅ Ativo"
+            status_icon = "ATIVO"
             status_text = "Funcionando"
         else:
-            status_icon = "❌ Falhado"
+            status_icon = "FALHADO"
             status_text = status.get('last_error', 'Erro desconhecido')
         
         success_rate = "N/A"
@@ -3019,7 +3428,7 @@ async def main():
         print(f"    Sucesso: {success_rate}")
         print()
     
-    print("\n🔄 Sistema rodando... Pressione Ctrl+C para parar")
+    print("\nSistema rodando... Pressione Ctrl+C para parar")
     
     # Executar supervisão dos bots
     try:
@@ -3052,10 +3461,16 @@ def run_system():
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n👋 Sistema interrompido pelo usuário")
+        try:
+            print("\nSistema interrompido pelo usuario")
+        except UnicodeEncodeError:
+            print("\nSistema interrompido pelo usuario")
     except Exception as e:
-        logger.error(f"❌ Erro crítico: {e}")
-        print(f"❌ Erro crítico: {e}")
+        logger.error(f"Erro critico: {e}")
+        try:
+            print(f"ERRO CRITICO: {e}")
+        except UnicodeEncodeError:
+            print(f"ERRO CRITICO: {str(e)}")
 
 if __name__ == '__main__':
     run_system()

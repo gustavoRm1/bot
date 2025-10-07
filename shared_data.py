@@ -38,7 +38,7 @@ default_data = {
                 "text": "👁️‍🗨️ Os conteúdos mais extremos da comunidade estão aqui.\nE você ainda tá de fora por menos de R$16…\n\n🚫 Fl@gr@s que nunca deviam vazar.\n🎥 Câmeras escondidas no ato.\n📂 Nudes deletados e recuperados.\n\n👉 Ou você entra agora, ou continua só imaginando o que os outros já estão vendo.",
                 "sendTime": 5,
                 "discount": 5,
-                "mediaFile": "https://t.me/MIDIASBOTIS/3",
+                "mediaFile": "https://t.me/MDMDMDMDAA2/14",
                 "audioFile": "",
                 "recipients": "all",
                 "content_type": "video",
@@ -51,7 +51,7 @@ default_data = {
                             "enabled": True,
                             "title": "SALA VERMELHA",
                             "price": 12.90,
-                            "message": "📦 DESBLOQUEAR SALA VERMELHA 📦\n\n🚷 Arquivos deletados do servidor principal e salvos só pra essa liberação.\n✅ Amador das faveladas\n✅ Amador com o pai depois do banho ⭐️🤫\n✅ Vídeos que muitos procuram várias países.\n✅ Conteúdo de cameras com áudio original.\n💥 Ative agora e leva 1 grupo s3cr3to bônus.",
+                            "message": "📦 DESBLOQUEAR SALA VERMELHA 📦\n\n🚷 Arquivos deletados do servidor principal e salvos só pra essa liberação.\n✅ Amador das faveladinhas\n✅ Amador com o papai depois do banho ⭐️🤫\n✅ Vídeos que já foi banido em vários países.\n✅ Conteúdo de cameras escondidas com áudio original.\n💥 Ative agora e leva 1 grupo s3cr3to bônus.",
                             "acceptButton": "✅ Aceitar Oportunidade",
                             "declineButton": "❌ Não Quero Bônus"
                         }
@@ -64,7 +64,7 @@ default_data = {
                             "enabled": True,
                             "title": "PACOTE SOMBRIO",
                             "price": 12.90,
-                            "message": "📦 DESBLOQUEAR PACOTE SOMBRIO 📦\n\n🚷 Arquivos esquecidos e salvos só pra essa liberação.\n✅ Amador das faveladas\n✅ Amador com o pai depois do banho ⭐️🤫\n✅ Vídeos que já foi esquecidos em vários países.\n✅ Conteúdo de cameras com áudio original.\n💥 Ative agora e leva 1 grupo s3cr3to bônus.",
+                            "message": "📦 DESBLOQUEAR PACOTE SOMBRIO 📦\n\n🚷 Arquivos deletados do servidor principal e salvos só pra essa liberação.\n✅ Amador das faveladinhas\n✅ Amador com o papai depois do banho ⭐️🤫\n✅ Vídeos que já foi banido em vários países.\n✅ Conteúdo de cameras escondidas com áudio original.\n💥 Ative agora e leva 1 grupo s3cr3to bônus.",
                             "acceptButton": "✅ Aceitar Oportunidade",
                             "declineButton": "❌ Não Quero Bônus"
                         }
@@ -80,7 +80,7 @@ default_data = {
         "messages": {
             "start_message": """🚷 𝗩𝗢𝗖Ê 𝗔𝗖𝗔𝗕𝗢𝗨 𝗗𝗘 𝗘𝗡𝗧𝗥𝗔𝗥 𝗡𝗢 𝗔𝗕𝗜𝗦𝗠𝗢 — 𝗘 𝗔𝗤𝗨𝗜 𝗡Ã𝗢 𝗘𝗫𝗜𝗦𝗧𝗘 𝗩𝗢𝗟𝗧𝗔. 
 
-💎 O maior e mais pr🔞curad🔞 Rateio de Grupos VIPs do Telegram está aberto… mas não por muito tempo. 
+💎 O maior e mais pr🔞ibid🔞 Rateio de Grupos VIPs do Telegram está aberto… mas não por muito tempo. 
 
 🔞 OnlyF4ns, Privacy, Close Friends VAZADOS 🔞 Famosas, Nov!nhas +18, Amadoras & Milf's insaciáveis 🔞 L!ves completas, conteúdos escondidos e traições reais gravadas. 
 
@@ -93,25 +93,25 @@ default_data = {
 ❌ Aqui não tem "achismos": são os vídeos que NINGUÉM teria coragem de postar publicamente. 
 👉 Se você sair agora, nunca mais encontra esse conteúdo. 
 
-🎁 𝗕ô𝗻𝘂𝘀 𝗦ó 𝗛𝗼𝗷𝗲: 𝗮𝗼 𝗮𝘀𝘀𝗶𝗻𝗮𝗿, 𝘃𝗼𝗰ê 𝗿𝗲𝗰𝗲𝗯𝗲 𝗮𝗰𝗲𝘀𝘀𝗼 𝘀𝗲𝗰𝗿𝗲𝘁𝗼 𝗮 +𝟰 𝗚𝗿𝘂𝗽𝗼𝘀 𝗩𝗜𝗣'𝘀 𝗼𝗰𝘂𝗹𝘁𝗼𝘀 (𝗻𝗼𝘃!𝗻𝗵𝟰𝘀 +𝟭𝟴, 𝗰𝗮𝘀𝗮𝗱𝗮𝘀 𝗿𝗲𝗮𝗶𝘀, 𝗳𝗹@𝗴𝗿@𝘀 & 𝗺í𝗱𝗶𝗮𝘀 𝗲𝘅𝗰𝗹𝘂í𝗱𝗮𝘀 𝗱𝗮 𝘄𝟯𝗯).""",
+🎁 𝗕ô𝗻𝘂𝘀 𝗦ó 𝗛𝗼𝗷𝗲: 𝗮𝗼 𝗮𝘀𝘀𝗶𝗻𝗮𝗿, 𝘃𝗼𝗰ê 𝗿𝗲𝗰𝗲𝗯𝗲 𝗮𝗰𝗲𝘀𝘀𝗼 𝘀𝗲𝗰𝗿𝗲𝘁𝗼 𝗮 +𝟰 𝗚𝗿𝘂𝗽𝗼𝘀 𝗩𝗜𝗣'𝘀 𝗼𝗰𝘂𝗹𝘁𝗼𝘀 (𝗻𝗼𝘃!𝗻𝗵𝟰𝘀, 𝗰𝗮𝘀𝗮𝗱𝗮𝘀 𝗿𝗲𝗮𝗶𝘀, 𝗳𝗹𝗮𝗴𝗿𝗮𝘀 𝗽𝗿🔞𝗶𝗯𝗶𝗱𝗼𝘀 & 𝗺í𝗱𝗶𝗮𝘀 𝗱𝗮 𝗱4️⃣ 𝗿𝗸 𝘄𝟯𝗯).""",
             "order_bump_vitalicio": """📦 DESBLOQUEAR SALA VERMELHA 📦
 
 🚷 Arquivos deletados do servidor principal e salvos só pra essa liberação. 
 
-✅ Amador das faveladas 
-✅ Amador com o pai depois do banho ⭐️🤫 
-✅ Vídeos que muitos procuram várias países. 
-✅ Conteúdo de cameras com áudio original. 
+✅ Amador das faveladinhas 
+✅ Amador com o papai depois do banho ⭐️🤫 
+✅ Vídeos que já foi banido em vários países. 
+✅ Conteúdo de cameras escondidas com áudio original. 
 
 💥 Ative agora e leva 1 grupo s3cr3to bônus.""",
             "order_bump_mensal": """📦 DESBLOQUEAR PACOTE SOMBRIO 📦
 
-🚷 Arquivos esquecidos e salvos só pra essa liberação. 
+🚷 Arquivos deletados do servidor principal e salvos só pra essa liberação. 
 
-✅ Amador das faveladas 
-✅ Amador com o pai depois do banho ⭐️🤫 
-✅ Vídeos que já foi esquecidos em vários países. 
-✅ Conteúdo de cameras com áudio original. 
+✅ Amador das faveladinhas 
+✅ Amador com o papai depois do banho ⭐️🤫 
+✅ Vídeos que já foi banido em vários países. 
+✅ Conteúdo de cameras escondidas com áudio original. 
 
 💥 Ative agora e leva 1 grupo s3cr3to bônus."""
         },
