@@ -12,7 +12,7 @@ import asyncio
 import json
 import threading
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 from shared_data import (
@@ -2469,7 +2469,6 @@ async def check_payment_status(query, user_id):
             created_at = payment_info.get('created_at')
             if created_at:
                 try:
-                    from datetime import datetime, timedelta
                     created_time = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
                     time_diff = datetime.now() - created_time.replace(tzinfo=None)
                     
@@ -2558,33 +2557,32 @@ async def check_payment_status(query, user_id):
             # ============================================
             # 🔍 VALIDAR SE A TRANSAÇÃO É RECENTE
             # ============================================
-            created_at = payment_info.get('created_at')
-            if created_at:
-                from datetime import datetime, timedelta
-                try:
-                    created_time = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
-                    time_diff = datetime.now() - created_time.replace(tzinfo=None)
+        created_at = payment_info.get('created_at')
+        if created_at:
+            try:
+                created_time = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                time_diff = datetime.now() - created_time.replace(tzinfo=None)
+                
+                if time_diff > timedelta(hours=1):
+                    logger.warning("=" * 60)
+                    logger.warning("⚠️ TRANSAÇÃO MUITO ANTIGA DETECTADA")
+                    logger.warning(f"⏰ Criada há: {time_diff}")
+                    logger.warning("🔄 Gerando nova transação para evitar cache...")
+                    logger.warning("=" * 60)
                     
-                    if time_diff > timedelta(hours=1):
-                        logger.warning("=" * 60)
-                        logger.warning("⚠️ TRANSAÇÃO MUITO ANTIGA DETECTADA")
-                        logger.warning(f"⏰ Criada há: {time_diff}")
-                        logger.warning("🔄 Gerando nova transação para evitar cache...")
-                        logger.warning("=" * 60)
-                        
-                        # Limpar pagamento antigo
-                        if user_id in pending_payments:
-                            del pending_payments[user_id]
-                        
-                        # Solicitar novo PIX
-                        await query.edit_message_text(
-                            "⏰ Transação expirada. Gerando novo PIX...\n\n"
-                            "🔄 Clique em 'Comprar' novamente para gerar um novo PIX."
-                        )
-                        return
-                        
-                except Exception as e:
-                    logger.warning(f"Erro ao validar data da transação: {e}")
+                    # Limpar pagamento antigo
+                    if user_id in pending_payments:
+                        del pending_payments[user_id]
+                    
+                    # Solicitar novo PIX
+                    await query.edit_message_text(
+                        "⏰ Transação expirada. Gerando novo PIX...\n\n"
+                        "🔄 Clique em 'Comprar' novamente para gerar um novo PIX."
+                    )
+                    return
+                    
+            except Exception as e:
+                logger.warning(f"Erro ao validar data da transação: {e}")
         
         while verification_attempts < max_attempts and status is None:
             verification_attempts += 1
