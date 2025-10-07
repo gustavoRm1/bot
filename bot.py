@@ -2395,7 +2395,7 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         if not payment_data:
             logger.error("❌ TODOS OS GATEWAYS FALHARAM")
             await query.message.reply_text("❌ ERRO: Sistema de pagamento temporariamente indisponível. Tente novamente em alguns minutos.")
-                return
+            return
         
         # ============================================
         # ✅ SUCESSO! PROCESSAR PAGAMENTO
@@ -2586,21 +2586,21 @@ async def check_payment_status(query, user_id):
             logger.info(f"📡 Tentativa {verification_attempts}/{max_attempts}")
             
             try:
-        if gateway == 'paradise':
-                paradise = ParadiseGateway()
-                status = await paradise.check_payment_status(payment_id)
+                if gateway == 'paradise':
+                    paradise = ParadiseGateway()
+                    status = await paradise.check_payment_status(payment_id)
                     logger.info(f"📥 Resposta Paradise (tentativa {verification_attempts}): {status}")
                 
-        elif gateway == 'pushynpay':
-                status = await check_pushynpay_payment_status(payment_id)
+                elif gateway == 'pushynpay':
+                    status = await check_pushynpay_payment_status(payment_id)
                     logger.info(f"📥 Resposta PushynPay (tentativa {verification_attempts}): {status}")
                 
-        elif gateway == 'syncpay_original':
-            syncpay = SyncPayIntegration()
-            status = syncpay.check_payment_status(payment_id)
+                elif gateway == 'syncpay_original':
+                    syncpay = SyncPayIntegration()
+                    status = syncpay.check_payment_status(payment_id)
                     logger.info(f"📥 Resposta SyncPay (tentativa {verification_attempts}): {status}")
                 
-        else:
+                else:
                     logger.error(f"❌ Gateway desconhecido: {gateway}")
                     status = 'error_unknown_gateway'
                     break
@@ -2796,7 +2796,7 @@ async def check_payment_status(query, user_id):
             return
         
         # CASO 4: STATUS DESCONHECIDO (BLOQUEAR POR SEGURANÇA)
-                else:
+        else:
             logger.error("=" * 60)
             logger.error(f"❌ STATUS DESCONHECIDO RECEBIDO: {status}")
             logger.error(f"Gateway: {gateway}")
