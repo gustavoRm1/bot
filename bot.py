@@ -577,55 +577,8 @@ class ParadiseGateway:
         # Em produção, implementar validação de assinatura
         return True
     
-    async def process_webhook(self, webhook_data):
-        """Processa webhook de confirmação do Paradise"""
-        try:
-            logger.info(f"🔔 Webhook Paradise recebido: {webhook_data}")
-            
-            # Extrair dados do webhook
-            transaction_id = webhook_data.get('id') or webhook_data.get('transaction_id')
-            status = webhook_data.get('status') or webhook_data.get('payment_status')
-            
-            if not transaction_id or not status:
-                logger.warning("Webhook Paradise sem dados suficientes")
-                return False
-            
-            # Procurar pagamento pendente
-            payment_found = False
-            for user_id, payment_info in pending_payments.items():
-                if (payment_info.get('payment_id') == transaction_id or 
-                    payment_info.get('gateway_payment_id') == transaction_id):
-                    
-                    if status == 'paid':
-                        # Pagamento confirmado!
-                        logger.info(f"💰 Pagamento Paradise confirmado via webhook: {transaction_id}")
-                        
-                        # Atualizar status
-                        payment_info['status'] = 'paid'
-                        payment_info['confirmed_at'] = datetime.now().isoformat()
-                        
-                        # WEBHOOK DESABILITADO COMPLETAMENTE - SÓ VIA VERIFICAÇÃO MANUAL
-                        # update_user_session(user_id, purchased=True)  # REMOVIDO - SEGURANÇA
-                        logger.info(f"⚠️ Webhook recebido mas IGNORADO - aguardando verificação manual obrigatória")
-                        
-                        # NÃO ENVIAR NENHUMA NOTIFICAÇÃO VIA WEBHOOK
-                        # O usuário DEVE clicar em "Verificar Pagamento" para liberar acesso
-                        logger.info(f"🔒 Webhook bloqueado - acesso só via verificação manual")
-                        # WEBHOOK COMPLETAMENTE DESABILITADO
-                        # Nenhuma ação é tomada via webhook
-                        logger.info(f"🔒 Webhook Paradise ignorado - verificação manual obrigatória")
-                        
-                        payment_found = True
-                        break
-            
-            if not payment_found:
-                logger.warning(f"Pagamento Paradise não encontrado: {transaction_id}")
-            
-            return payment_found
-            
-        except Exception as e:
-            logger.error(f"Erro ao processar webhook Paradise: {e}")
-            return False
+    # FUNÇÃO WEBHOOK REMOVIDA - APENAS POLLING PARA SEGURANÇA
+    # Webhooks desabilitados completamente para evitar bypass de pagamento
     
     async def test_connection(self):
         """Testa conexão com Paradise API"""
@@ -2311,9 +2264,13 @@ Apos o pagamento, clique no botao abaixo para verificar:"""
 # O sistema agora usa apenas Paradise como gateway principal
 
 async def check_payment_status(query, user_id):
-    """Verifica status do pagamento e envia link específico"""
+    """Verifica status do pagamento COM VALIDAÇÃO RIGOROSA COMPLETA"""
     try:
-        # Verificar rate limiting para evitar cliques muito rápidos
+        # ============================================
+        # 🔒 SEGURANÇA CRÍTICA - INÍCIO
+        # ============================================
+        
+        # Verificar rate limiting
         current_time = time.time()
         if user_id in payment_check_cooldown:
             time_since_last_check = current_time - payment_check_cooldown[user_id]
@@ -2322,137 +2279,207 @@ async def check_payment_status(query, user_id):
                 await query.answer(f"⏳ Aguarde {remaining_time:.0f}s para verificar novamente")
                 return
         
-        # Registrar timestamp da verificação
         payment_check_cooldown[user_id] = current_time
         
         logger.info("=" * 60)
-        logger.info("🔍 INICIANDO VERIFICAÇÃO DE PAGAMENTO")
+        logger.info("🔍 VERIFICAÇÃO DE PAGAMENTO INICIADA")
         logger.info(f"User ID: {user_id}")
+        logger.info(f"Timestamp: {datetime.now().isoformat()}")
         
-        # Recuperar informações do pagamento
+        # ============================================
+        # 📦 RECUPERAR INFORMAÇÕES DO PAGAMENTO
+        # ============================================
+        
         payment_info = pending_payments.get(user_id)
         
         if not payment_info:
-            logger.warning(f"⚠️ Nenhum pagamento pendente para user {user_id}")
+            logger.warning(f"⚠️ Nenhum pagamento pendente LOCAL para user {user_id}")
+            
             # Tentar recuperar do sistema compartilhado
             try:
                 from shared_data import get_pending_payments
                 all_payments = get_pending_payments()
                 payment_info = all_payments.get(str(user_id))
+                logger.info(f"📥 Tentando recuperar do shared_data: {'✅ ENCONTRADO' if payment_info else '❌ NÃO ENCONTRADO'}")
             except ImportError:
-                logger.warning("Função get_pending_payments não disponível no shared_data")
+                logger.error("❌ Módulo shared_data não disponível")
                 payment_info = None
-            
+        
         if not payment_info:
-            logger.error(f"❌ Pagamento não encontrado em nenhum local!")
-            await query.edit_message_text("❌ Nenhum pagamento pendente encontrado.")
+            logger.error("=" * 60)
+            logger.error("❌ PAGAMENTO NÃO ENCONTRADO EM NENHUM LOCAL")
+            logger.error(f"User ID: {user_id}")
+            logger.error("=" * 60)
+            
+            await query.edit_message_text("❌ Nenhum pagamento pendente encontrado.\n\nGere um novo PIX clicando em 'Comprar' novamente.")
             return
         
-        logger.info(f"📦 Payment Info Recuperado: {payment_info}")
+        # ============================================
+        # 🔐 VALIDAR DADOS OBRIGATÓRIOS
+        # ============================================
         
-        # Extrair bot_token
-        bot_token = payment_info.get('bot_token')
-        logger.info(f"🤖 Bot Token: {bot_token}")
+        logger.info(f"📋 Payment Info Completo: {json.dumps(payment_info, indent=2)}")
         
-        if not bot_token:
-            logger.error("❌ Bot token não encontrado no payment_info!")
-            logger.error(f"Chaves disponíveis: {list(payment_info.keys())}")
-            # Tentar recuperar de active_bots como fallback
-            if active_bots:
-                bot_token = list(active_bots.keys())[0]
-                logger.warning(f"⚠️ Usando fallback bot_token: {bot_token}")
+        payment_id = payment_info.get('payment_id')
+        gateway = payment_info.get('gateway', 'unknown')
+        amount = payment_info.get('amount', 0)
+        plan = payment_info.get('plan', 'N/A')
         
-        payment_id = payment_info['payment_id']
-        gateway = payment_info.get('gateway', 'pushynpay')
-        
-        # Se é pagamento manual, simular verificação
-        if payment_info.get('manual'):
-            await query.edit_message_text(f"""⏳ PAGAMENTO MANUAL
-
-💰 Valor: R$ {payment_info['amount']:.2f}
-📋 Plano: {payment_info['plan']}
-
-🔄 Para pagamentos manuais, entre em contato com @seu_usuario após o pagamento para liberação imediata.
-
-📱 Ou aguarde até 24h para liberação automática.""")
+        # VALIDAÇÃO CRÍTICA 1: Payment ID deve existir
+        if not payment_id or payment_id == 'None':
+            logger.error("=" * 60)
+            logger.error("❌ VALIDAÇÃO FALHOU: Payment ID inválido")
+            logger.error(f"Payment ID recebido: {payment_id}")
+            logger.error(f"Gateway: {gateway}")
+            logger.error("=" * 60)
+            
+            await query.edit_message_text(
+                "❌ Erro na verificação do pagamento.\n\n"
+                "Por favor, gere um novo PIX clicando em 'Comprar' novamente."
+            )
             return
         
-        # Verificar status baseado no gateway usado
+        # VALIDAÇÃO CRÍTICA 2: Gateway deve ser Paradise
+        if gateway != 'paradise':
+            logger.warning(f"⚠️ Gateway diferente de Paradise: {gateway}")
+        
+        logger.info(f"✅ Validações iniciais OK")
+        logger.info(f"🎯 Payment ID: {payment_id}")
+        logger.info(f"💳 Gateway: {gateway}")
+        logger.info(f"💰 Valor: R$ {amount:.2f}")
+        logger.info(f"📦 Plano: {plan}")
+        
+        # ============================================
+        # 🌐 VERIFICAR STATUS NO GATEWAY
+        # ============================================
+        
         status = None
+        verification_attempts = 0
+        max_attempts = 3
         
-        if gateway == 'paradise':
-            # Verificar via Paradise (GATEWAY PRINCIPAL)
-            if not payment_id or payment_id == 'None':
-                logger.error(f"❌ Payment ID inválido para Paradise: {payment_id}")
-                status = None
-            else:
-                paradise = ParadiseGateway()
-                status = await paradise.check_payment_status(payment_id)
-                logger.info(f"🔍 Status Paradise: {status}")
-                logger.info(f"🔍 Payment ID usado: {payment_id}")
-                logger.info(f"🔍 Gateway: {gateway}")
-        elif gateway == 'pushynpay':
-            # Verificar via PushynPay com múltiplas tentativas
-            max_attempts = 3
-            for attempt in range(max_attempts):
-                status = await check_pushynpay_payment_status(payment_id)
+        logger.info(f"🔄 Iniciando verificação no gateway {gateway}...")
+        
+        while verification_attempts < max_attempts and status is None:
+            verification_attempts += 1
+            logger.info(f"📡 Tentativa {verification_attempts}/{max_attempts}")
+            
+            try:
+                if gateway == 'paradise':
+                    paradise = ParadiseGateway()
+                    status = await paradise.check_payment_status(payment_id)
+                    logger.info(f"📥 Resposta Paradise (tentativa {verification_attempts}): {status}")
+                
+                elif gateway == 'pushynpay':
+                    status = await check_pushynpay_payment_status(payment_id)
+                    logger.info(f"📥 Resposta PushynPay (tentativa {verification_attempts}): {status}")
+                
+                elif gateway == 'syncpay_original':
+                    syncpay = SyncPayIntegration()
+                    status = syncpay.check_payment_status(payment_id)
+                    logger.info(f"📥 Resposta SyncPay (tentativa {verification_attempts}): {status}")
+                
+                else:
+                    logger.error(f"❌ Gateway desconhecido: {gateway}")
+                    status = 'error_unknown_gateway'
+                    break
+                
+                # Se obteve resposta, sair do loop
                 if status is not None:
                     break
-                if attempt < max_attempts - 1:
-                    logger.info(f"Tentativa {attempt + 1} de verificação PushynPay falhou, tentando novamente...")
-                    await asyncio.sleep(2)  # Aguardar 2 segundos entre tentativas
-        elif gateway == 'syncpay_original':
-            # Verificar via SyncPay Original
-            syncpay = SyncPayIntegration()
-            status = syncpay.check_payment_status(payment_id)
-        else:
-            logger.error(f"Gateway desconhecido para verificação: {gateway}")
-            status = None
+                
+                # Se não obteve resposta, aguardar antes de tentar novamente
+                if verification_attempts < max_attempts:
+                    logger.warning(f"⚠️ Status None na tentativa {verification_attempts}, aguardando 2s...")
+                    await asyncio.sleep(2)
+                    
+            except Exception as e:
+                logger.error(f"❌ Erro na tentativa {verification_attempts}: {str(e)}")
+                if verification_attempts < max_attempts:
+                    await asyncio.sleep(2)
         
-        logger.info(f"📊 Status Retornado: {status}")
+        # ============================================
+        # 🔒 VALIDAÇÃO RIGOROSA DO STATUS
+        # ============================================
         
-        # VALIDAÇÃO RIGOROSA: Só liberar acesso se status for EXATAMENTE 'paid'
+        logger.info("=" * 60)
+        logger.info("🔐 VALIDAÇÃO RIGOROSA DO STATUS")
+        logger.info(f"Status recebido: {status}")
+        logger.info(f"Tipo do status: {type(status)}")
+        logger.info(f"Tentativas de verificação: {verification_attempts}")
+        logger.info("=" * 60)
+        
+        # VALIDAÇÃO CRÍTICA 3: Status deve ser válido
         if status is None:
-            logger.error("❌ FALHA NA VERIFICAÇÃO - Status retornou None")
-            await query.edit_message_text("""❌ ERRO NA VERIFICAÇÃO DE PAGAMENTO
-
-🔧 Sistema temporariamente indisponível
-📞 Entre em contato com o suporte
-
-💰 Valor: R$ {:.2f}
-📋 Plano: {}""".format(payment_info['amount'], payment_info['plan']))
-            return
-        elif status == 'api_key_invalid':
-            logger.error("❌ API KEY PARADISE INVÁLIDA - BLOQUEANDO ACESSO")
-            await query.edit_message_text("""❌ SISTEMA INDISPONÍVEL
-
-🔧 Configuração de pagamento temporariamente indisponível
-📞 Entre em contato com o suporte para resolver
-
-💰 Valor: R$ {:.2f}
-📋 Plano: {}""".format(payment_info['amount'], payment_info['plan']))
+            logger.error("=" * 60)
+            logger.error("❌ VALIDAÇÃO FALHOU: Status retornou None após todas tentativas")
+            logger.error(f"Gateway: {gateway}")
+            logger.error(f"Payment ID: {payment_id}")
+            logger.error(f"Tentativas realizadas: {verification_attempts}")
+            logger.error("=" * 60)
+            
+            keyboard = [
+                [InlineKeyboardButton("🔄 Verificar Novamente", callback_data=f"verificar_pagamento_{user_id}")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            await query.edit_message_text(
+                "❌ Erro na verificação do pagamento.\n\n"
+                "🔧 Sistema temporariamente indisponível.\n"
+                "⏱️ Aguarde alguns minutos e clique em 'Verificar Novamente'.\n\n"
+                "📞 Se o problema persistir, entre em contato com o suporte.",
+                reply_markup=reply_markup
+            )
             return
         
-        # Se pagamento confirmado
+        # VALIDAÇÃO CRÍTICA 4: API Key inválida deve bloquear acesso
+        if status == 'api_key_invalid':
+            logger.error("=" * 60)
+            logger.error("❌ API KEY INVÁLIDA - BLOQUEANDO ACESSO COMPLETO")
+            logger.error("🔒 SISTEMA NÃO PODE VERIFICAR PAGAMENTOS")
+            logger.error("=" * 60)
+            
+            await query.edit_message_text(
+                "❌ Sistema de pagamento temporariamente indisponível.\n\n"
+                "🔧 Configuração em manutenção.\n"
+                "📞 Entre em contato com o suporte para resolver."
+            )
+            return
+        
+        # ============================================
+        # ✅ PROCESSAR STATUS VÁLIDO
+        # ============================================
+        
+        # CASO 1: PAGAMENTO CONFIRMADO (ÚNICO CASO QUE LIBERA ACESSO)
         if status == 'paid':
             logger.info("=" * 60)
-            logger.info("💰 PAGAMENTO CONFIRMADO!")
+            logger.info("✅✅✅ PAGAMENTO CONFIRMADO PELO GATEWAY ✅✅✅")
             logger.info(f"User ID: {user_id}")
-            logger.info(f"Bot Token: {bot_token}")
+            logger.info(f"Payment ID: {payment_id}")
+            logger.info(f"Gateway: {gateway}")
+            logger.info(f"Valor: R$ {amount:.2f}")
+            logger.info(f"Plano: {plan}")
+            logger.info(f"Timestamp: {datetime.now().isoformat()}")
             logger.info("=" * 60)
             
             # Exibir mensagem de confirmação
-            await query.edit_message_text(f"""🎉 PAGAMENTO CONFIRMADO!
-
-✅ {payment_info['plan']}
-💰 Valor: R$ {payment_info['amount']:.2f}
-
-🎁 Seu acesso será liberado em até 5 minutos!
-📱 Entre em contato com @seu_usuario para receber os links dos grupos.
-
-Obrigado pela compra! 🚀""")
+            await query.edit_message_text(
+                f"🎉 PAGAMENTO CONFIRMADO!\n\n"
+                f"✅ {plan}\n"
+                f"💰 Valor: R$ {amount:.2f}\n\n"
+                f"🎁 Seu acesso será liberado em até 5 minutos!\n"
+                f"📱 Entre em contato com @seu_usuario para receber os links dos grupos.\n\n"
+                f"Obrigado pela compra! 🚀"
+            )
             
-            # Enviar link de acesso específico
+            # Extrair bot_token
+            bot_token = payment_info.get('bot_token')
+            if not bot_token:
+                logger.error("❌ Bot token não encontrado no payment_info!")
+                if active_bots:
+                    bot_token = list(active_bots.keys())[0]
+                    logger.warning(f"⚠️ Usando fallback bot_token: {bot_token}")
+            
+            # Enviar link de acesso
             link_sent = await send_access_link(user_id, bot_token)
             
             if link_sent:
@@ -2460,18 +2487,16 @@ Obrigado pela compra! 🚀""")
             else:
                 logger.error("❌ Falha ao enviar link de acesso!")
             
-            # ENVIAR NOTIFICAÇÃO DE VENDA PARA O ADMIN
+            # Enviar notificação para o admin
             try:
-                # Obter informações do usuário
                 user_info = {
                     'user_id': user_id,
                     'first_name': query.from_user.first_name or 'N/A',
                     'last_name': query.from_user.last_name or '',
                     'username': query.from_user.username or 'N/A',
-                    'document': '***.***.***-**'  # CPF mascarado por privacidade
+                    'document': '***.***.***-**'
                 }
                 
-                # Obter informações do bot atual
                 bot_info = {}
                 if bot_token in active_bots:
                     try:
@@ -2490,7 +2515,6 @@ Obrigado pela compra! 🚀""")
                             'first_name': 'Bot'
                         }
                 
-                # Enviar notificação para o admin
                 await send_sale_notification_to_admin(payment_info, user_info, bot_info)
                 
             except Exception as e:
@@ -2499,6 +2523,7 @@ Obrigado pela compra! 🚀""")
             # Limpar pagamento pendente
             if user_id in pending_payments:
                 del pending_payments[user_id]
+            
             try:
                 from shared_data import remove_pending_payment, update_stats
                 remove_pending_payment(user_id)
@@ -2506,117 +2531,98 @@ Obrigado pela compra! 🚀""")
             except ImportError:
                 logger.warning("Funções do shared_data não disponíveis")
             
-            # MARCAR USUÁRIO COMO COMPRADOR APENAS APÓS CONFIRMAÇÃO
+            # Marcar usuário como comprador
             update_user_session(user_id, purchased=True)
-            logger.info(f"✅ Usuário {user_id} marcado como comprador após confirmação de pagamento")
+            logger.info(f"✅ Usuário {user_id} marcado como comprador")
             
-            # Adicionar evento de pagamento confirmado
-            add_event('PAYMENT_CONFIRMED', f'Pagamento confirmado: R$ {payment_info["amount"]:.2f} - {payment_info["plan"]}', user_id)
+            # Adicionar evento
+            add_event('PAYMENT_CONFIRMED', f'Pagamento confirmado: R$ {amount:.2f} - {plan}', user_id)
             
-        elif status == 'failed':
-            # Pagamento falhou - informar usuário
-            await query.edit_message_text(f"""❌ PAGAMENTO FALHOU
-
-💔 Seu pagamento não foi processado com sucesso.
-
-🔄 Tente gerar um novo PIX clicando em "Comprar" novamente.
-
-💰 Valor: R$ {payment_info['amount']:.2f}
-📋 Plano: {payment_info['plan']}""")
-            return
-            
+            return  # <<<< ÚNICO PONTO QUE LIBERA ACESSO
+        
+        # CASO 2: PAGAMENTO PENDENTE
         elif status == 'pending':
-            # Pagamento pendente - permitir verificação novamente
+            logger.info("⏳ Pagamento ainda pendente")
+            
             keyboard = [
                 [InlineKeyboardButton("🔄 Verificar Novamente", callback_data=f"verificar_pagamento_{user_id}")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
-            pending_message = f"""⏳ PAGAMENTO AINDA NÃO CONFIRMADO
-
-🔄 Aguarde alguns minutos e clique em "Verificar Novamente"
-
-💡 O PIX pode levar até 5 minutos para ser processado
-⏰ Você pode verificar quantas vezes quiser até ser autorizado
-
-💰 Valor: R$ {payment_info['amount']:.2f}
-📋 Plano: {payment_info['plan']}"""
+            await query.edit_message_text(
+                f"⏳ PAGAMENTO AINDA NÃO CONFIRMADO\n\n"
+                f"🔄 Aguarde alguns minutos e clique em 'Verificar Novamente'\n\n"
+                f"💡 O PIX pode levar até 5 minutos para ser processado\n"
+                f"⏰ Você pode verificar quantas vezes quiser até ser autorizado\n\n"
+                f"💰 Valor: R$ {amount:.2f}\n"
+                f"📋 Plano: {plan}",
+                reply_markup=reply_markup
+            )
+            return
+        
+        # CASO 3: PAGAMENTO FALHOU
+        elif status == 'failed':
+            logger.warning(f"❌ Pagamento falhou: {payment_id}")
             
-            try:
-                await query.edit_message_text(pending_message, reply_markup=reply_markup)
-            except Exception as edit_error:
-                if "Message is not modified" in str(edit_error):
-                    logger.info("Mensagem já está atualizada, ignorando erro de modificação")
-                    await query.answer("⏳ Pagamento ainda pendente...")
-                else:
-                    logger.error(f"Erro ao editar mensagem: {edit_error}")
-                    await query.answer("❌ Erro ao atualizar mensagem")
-            
+            await query.edit_message_text(
+                f"❌ PAGAMENTO FALHOU\n\n"
+                f"💔 Seu pagamento não foi processado com sucesso.\n\n"
+                f"🔄 Tente gerar um novo PIX clicando em 'Comprar' novamente.\n\n"
+                f"💰 Valor: R$ {amount:.2f}\n"
+                f"📋 Plano: {plan}"
+            )
+            return
+        
+        # CASO 4: STATUS DESCONHECIDO (BLOQUEAR POR SEGURANÇA)
         else:
-            # Pagamento não encontrado ou erro - permitir nova verificação
+            logger.error("=" * 60)
+            logger.error(f"❌ STATUS DESCONHECIDO RECEBIDO: {status}")
+            logger.error(f"Gateway: {gateway}")
+            logger.error(f"Payment ID: {payment_id}")
+            logger.error("🔒 BLOQUEANDO ACESSO POR SEGURANÇA")
+            logger.error("=" * 60)
+            
             keyboard = [
                 [InlineKeyboardButton("🔄 Verificar Novamente", callback_data=f"verificar_pagamento_{user_id}")],
                 [InlineKeyboardButton("📞 Contatar Suporte", callback_data=f"contatar_suporte_{user_id}")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
-            not_found_message = f"""❌ PAGAMENTO NÃO IDENTIFICADO
-
-🔄 Clique em "Verificar Novamente" para tentar mais uma vez
-
-💡 Possíveis motivos:
-• PIX ainda está sendo processado
-• Aguarde alguns minutos após o pagamento
-• Verifique se copiou o código PIX corretamente
-
-📞 Se o problema persistir, clique em "Contatar Suporte"
-
-💰 Valor: R$ {payment_info['amount']:.2f}
-📋 Plano: {payment_info['plan']}"""
-            
-            try:
-                await query.edit_message_text(not_found_message, reply_markup=reply_markup)
-            except Exception as edit_error:
-                if "Message is not modified" in str(edit_error):
-                    logger.info("Mensagem já está atualizada, ignorando erro de modificação")
-                    await query.answer("❌ Pagamento não identificado...")
-                else:
-                    logger.error(f"Erro ao editar mensagem: {edit_error}")
-                    await query.answer("❌ Erro ao atualizar mensagem")
-            
-    except Exception as e:
-        logger.error(f"❌ ERRO em check_payment_status: {str(e)}", exc_info=True)
+            await query.edit_message_text(
+                f"❌ Status de pagamento desconhecido.\n\n"
+                f"🔄 Clique em 'Verificar Novamente' para tentar mais uma vez.\n\n"
+                f"📞 Se o problema persistir, clique em 'Contatar Suporte'.\n\n"
+                f"💰 Valor: R$ {amount:.2f}\n"
+                f"📋 Plano: {plan}",
+                reply_markup=reply_markup
+            )
+            return
         
-        # Em caso de erro, também permitir nova verificação
+    except Exception as e:
+        logger.error("=" * 60)
+        logger.error(f"❌ ERRO CRÍTICO em check_payment_status")
+        logger.error(f"Erro: {str(e)}")
+        logger.error(f"Tipo: {type(e).__name__}")
+        logger.error("=" * 60)
+        
         keyboard = [
             [InlineKeyboardButton("🔄 Verificar Novamente", callback_data=f"verificar_pagamento_{user_id}")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        # Tentar obter payment_info para mostrar valores
         payment_info = pending_payments.get(user_id, {})
         
-        error_message = f"""❌ ERRO AO VERIFICAR PAGAMENTO
-
-🔄 Clique em "Verificar Novamente" para tentar mais uma vez
-
-💡 Possíveis motivos:
-• Problema temporário de conexão
-• Aguarde alguns minutos e tente novamente
-• Se persistir, entre em contato com @seu_usuario
-
-💰 Valor: R$ {payment_info.get('amount', 0):.2f}
-📋 Plano: {payment_info.get('plan', 'N/A')}"""
-        
-        try:
-            await query.edit_message_text(error_message, reply_markup=reply_markup)
-        except Exception as edit_error:
-            if "Message is not modified" in str(edit_error):
-                logger.info("Mensagem já está atualizada, ignorando erro de modificação")
-                await query.answer("❌ Erro ao verificar pagamento...")
-            else:
-                logger.error(f"Erro ao editar mensagem de erro: {edit_error}")
-                await query.answer("❌ Erro ao atualizar mensagem")
+        await query.edit_message_text(
+            f"❌ ERRO AO VERIFICAR PAGAMENTO\n\n"
+            f"🔄 Clique em 'Verificar Novamente' para tentar mais uma vez\n\n"
+            f"💡 Possíveis motivos:\n"
+            f"• Problema temporário de conexão\n"
+            f"• Aguarde alguns minutos e tente novamente\n"
+            f"• Se persistir, entre em contato com @seu_usuario\n\n"
+            f"💰 Valor: R$ {payment_info.get('amount', 0):.2f}\n"
+            f"📋 Plano: {payment_info.get('plan', 'N/A')}",
+            reply_markup=reply_markup
+        )
 
 async def send_support_message(query, user_id):
     """Envia mensagem de suporte para problemas de pagamento"""
@@ -3317,55 +3323,8 @@ async def supervise_bots():
     
     event_logger.info("Supervisão finalizada")
 
-# Servidor Flask para webhooks
-from flask import Flask, request, jsonify
-import threading
-
-app = Flask(__name__)
-
-@app.route('/webhook/paradise', methods=['POST'])
-def paradise_webhook():
-    """Endpoint para receber webhooks do Paradise"""
-    try:
-        webhook_data = request.get_json()
-        if not webhook_data:
-            return jsonify({'error': 'No JSON data'}), 400
-        
-        # Processar webhook de forma assíncrona
-        paradise = ParadiseGateway()
-        
-        # Executar em thread separada para não bloquear
-        def process_webhook():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(paradise.process_webhook(webhook_data))
-            loop.close()
-        
-        thread = threading.Thread(target=process_webhook)
-        thread.daemon = True
-        thread.start()
-        
-        return jsonify({'status': 'received'}), 200
-        
-    except Exception as e:
-        logger.error(f"Erro no webhook Paradise: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/health', methods=['GET'])
-def health_check():
-    """Health check endpoint"""
-    return jsonify({
-        'status': 'healthy',
-        'bots_active': len(active_bots),
-        'gateways_active': len([g for g in gateway_status.values() if g['status'] == 'active'])
-    }), 200
-
-def run_flask_server():
-    """Executa servidor Flask em thread separada"""
-    try:
-        app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
-    except Exception as e:
-        logger.error(f"Erro no servidor Flask: {e}")
+# SERVIDOR FLASK REMOVIDO - APENAS POLLING PARA SEGURANÇA
+# Webhooks desabilitados completamente para evitar bypass de pagamento
 
 async def main():
     """Função principal - Sistema Multi-Bot Assíncrono"""
