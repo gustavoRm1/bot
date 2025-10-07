@@ -436,9 +436,17 @@ class ParadiseGateway:
             clean_document = re.sub(r"\D", "", customer_data.get("document", "")) or "12345678900"
             clean_phone = re.sub(r"\D", "", customer_data.get("phone", "")) or "11999999999"
             
-            # Payload básico (adaptar aos campos que Paradise exige)
+            # ============================================
+            # 💰 CONVERTER VALOR PARA CENTAVOS (PARADISE EXIGE EM CENTAVOS)
+            # ============================================
+            # Exemplo: R$ 14.97 -> 1497 centavos
+            amount_in_cents = round(amount * 100)
+            
+            logger.info(f"💰 Convertendo valor: R$ {amount:.2f} -> {amount_in_cents} centavos")
+            
+            # Payload básico (seguindo estrutura do index.php)
             payload = {
-                "amount": round(amount * 100),  # centavos se Paradise exigir
+                "amount": amount_in_cents,  # ✅ VALOR EM CENTAVOS
                 "description": description,
                 "reference": internal_reference,
                 "checkoutUrl": checkout_url or "",
@@ -450,6 +458,8 @@ class ParadiseGateway:
                     "phone": clean_phone
                 }
             }
+            
+            logger.info(f"📦 Payload Paradise: {json.dumps(payload, indent=2)}")
 
             resp = requests.post(
                 f"{self.base_url.rstrip('/')}/transaction.php",
