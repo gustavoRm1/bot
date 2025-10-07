@@ -449,24 +449,26 @@ class ParadiseGateway:
                 "amount": amount_in_cents,  # ✅ VALOR EM CENTAVOS
                 "description": description,
                 "reference": internal_reference,
-                "checkoutUrl": checkout_url or "",
-                "productHash": getattr(self, "product_hash", None),
-                "orderbump": [],  # ✅ CAMPO OBRIGATÓRIO (array vazio se não houver)
+                # TESTE: Remover checkoutUrl e productHash para diagnosticar
+                # "checkoutUrl": checkout_url or "",
+                # "productHash": getattr(self, "product_hash", None),
+                # "orderbump": [],
                 "customer": {
                     "name": customer_data.get("name", f"Cliente {user_id}"),
                     "email": customer_data.get("email", f"cliente{user_id}@email.com"),
                     "document": clean_document,
                     "phone": clean_phone
-                },
-                "address": {
-                    "street": "Rua do Produto Digital",
-                    "number": "0",
-                    "neighborhood": "Internet",
-                    "city": "Brasil",
-                    "state": "BR",
-                    "zipcode": "00000000",
-                    "complement": "Produto Digital"
                 }
+                # TESTE: Remover address temporariamente
+                # "address": {
+                #     "street": "Rua do Produto Digital",
+                #     "number": "0",
+                #     "neighborhood": "Internet",
+                #     "city": "Brasil",
+                #     "state": "BR",
+                #     "zipcode": "00000000",
+                #     "complement": "Produto Digital"
+                # }
             }
             
             logger.error("=" * 80)
