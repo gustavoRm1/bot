@@ -432,6 +432,10 @@ class ParadiseGateway:
             logger.info(f"🏛️ Criando pagamento Paradise: R$ {amount}")
             internal_reference = f'BOT-{user_id}-{int(time.time())}'
 
+            # Preparar dados do cliente com valores padrão válidos
+            clean_document = re.sub(r"\D", "", customer_data.get("document", "")) or "12345678900"
+            clean_phone = re.sub(r"\D", "", customer_data.get("phone", "")) or "11999999999"
+            
             # Payload básico (adaptar aos campos que Paradise exige)
             payload = {
                 "amount": round(amount * 100),  # centavos se Paradise exigir
@@ -442,8 +446,8 @@ class ParadiseGateway:
                 "customer": {
                     "name": customer_data.get("name", f"Cliente {user_id}"),
                     "email": customer_data.get("email", f"cliente{user_id}@email.com"),
-                    "document": re.sub(r"\D", "", customer_data.get("document", "")),
-                    "phone": re.sub(r"\D", "", customer_data.get("phone", ""))
+                    "document": clean_document,
+                    "phone": clean_phone
                 }
             }
 
@@ -2169,11 +2173,43 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         cache_buster = (timestamp % 100) / 10000  # 0.00 a 0.99 centavos
         unique_amount = amount + cache_buster
         
+        # ============================================
+        # 📱 CAPTURAR TELEFONE REAL DO TELEGRAM
+        # ============================================
+        user_phone = None
+        user_name = query.from_user.first_name or f"Cliente {user_id}"
+        user_full_name = f"{query.from_user.first_name or ''} {query.from_user.last_name or ''}".strip()
+        
+        # Tentar obter o telefone do contato do Telegram (se compartilhado)
+        try:
+            # O Telegram permite que usuários compartilhem seu número
+            # query.from_user pode ter phone_number se o usuário compartilhou
+            if hasattr(query.from_user, 'phone_number') and query.from_user.phone_number:
+                user_phone = query.from_user.phone_number
+                logger.info(f"📱 Telefone capturado do Telegram: {user_phone}")
+        except Exception as e:
+            logger.warning(f"⚠️ Não foi possível capturar telefone do Telegram: {e}")
+        
+        # Se não conseguiu capturar telefone, usar padrão
+        if not user_phone:
+            user_phone = "11999999999"
+            logger.warning(f"⚠️ Telefone não disponível - usando padrão: {user_phone}")
+        
         customer_data = {
-            "name": query.from_user.first_name or f"Cliente {user_id}",
+            "name": user_full_name or user_name,
             "email": f"cliente{user_id}_{timestamp}@test.com",  # E-mail único para evitar cache
-            "document": "12345678900"
+            "document": "12345678900",  # CPF padrão para produtos digitais
+            "phone": user_phone  # Telefone real ou padrão
         }
+        
+        logger.info("=" * 60)
+        logger.info("👤 DADOS DO CLIENTE")
+        logger.info(f"Nome: {customer_data['name']}")
+        logger.info(f"Email: {customer_data['email']}")
+        logger.info(f"Telefone: {customer_data['phone']}")
+        logger.info(f"User ID Telegram: {user_id}")
+        logger.info(f"Username: @{query.from_user.username or 'N/A'}")
+        logger.info("=" * 60)
         
         logger.info(f"🔧 Cache buster aplicado: +{cache_buster:.4f} = R$ {unique_amount:.4f}")
         
