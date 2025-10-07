@@ -539,24 +539,37 @@ class ParadiseGateway:
                 data = response.json()
                 logger.info(f"Paradise Status Data: {data}")
                 
-                # Verificar diferentes formatos de resposta
+                # Verificar diferentes formatos de resposta do Paradise
                 payment_status = (data.get('payment_status') or 
                                 data.get('status') or 
                                 data.get('state'))
                 
+                logger.info(f"🔍 Status retornado pelo Paradise: {payment_status}")
+                
+                # VALIDAÇÃO RIGOROSA - Só aceitar 'paid' exato
                 if payment_status == 'paid':
-                    logger.info(f"✅ Pagamento Paradise confirmado: {transaction_id}")
+                    logger.info(f"✅ Pagamento Paradise CONFIRMADO: {transaction_id}")
                     return 'paid'
-                else:
-                    logger.info(f"⏳ Pagamento Paradise pendente: {transaction_id} (status: {payment_status})")
+                elif payment_status in ['pending', 'waiting', 'processing', 'created']:
+                    logger.info(f"⏳ Pagamento Paradise PENDENTE: {transaction_id} (status: {payment_status})")
                     return 'pending'
+                elif payment_status in ['failed', 'cancelled', 'expired', 'rejected']:
+                    logger.info(f"❌ Pagamento Paradise FALHOU: {transaction_id} (status: {payment_status})")
+                    return 'failed'
+                else:
+                    logger.warning(f"⚠️ Status Paradise DESCONHECIDO: {transaction_id} (status: {payment_status})")
+                    return 'failed'  # Status desconhecido = FALHA para segurança
+            elif response.status_code == 401:
+                logger.error(f"❌ API Key Paradise INVÁLIDA: {response.text}")
+                logger.error("❌ SISTEMA NÃO PODE VERIFICAR PAGAMENTOS - BLOQUEANDO ACESSO")
+                return 'api_key_invalid'  # Status especial para API key inválida
             else:
                 logger.warning(f"Paradise status check failed: {response.status_code} - {response.text}")
-                return 'pending'
+                return None  # Retornar None para indicar falha na verificação
                 
         except Exception as e:
             logger.error(f"Erro ao verificar status Paradise: {e}")
-            return 'pending'
+            return None  # Retornar None para indicar falha na verificação
     
     def validate_webhook_signature(self, payload, signature):
         """Valida assinatura do webhook Paradise (se implementado)"""
@@ -591,40 +604,16 @@ class ParadiseGateway:
                         payment_info['status'] = 'paid'
                         payment_info['confirmed_at'] = datetime.now().isoformat()
                         
-                        # Enviar notificação para o usuário
-                        bot_token = payment_info.get('bot_token')
-                        if bot_token and bot_token in active_bots:
-                            bot = active_bots[bot_token]['bot']
-                            try:
-                                await bot.send_message(
-                                    chat_id=user_id,
-                                    text="✅ **PAGAMENTO CONFIRMADO!**\n\n🎉 Seu acesso foi liberado com sucesso!\n\n🔗 Clique no botão abaixo para acessar:",
-                                    parse_mode='HTML'
-                                )
-                                
-                                # Enviar link de acesso
-                                access_link = BOT_LINKS.get(bot_token, 'https://oacessoliberado.shop/vip2')
-                                keyboard = [[InlineKeyboardButton("🚀 ACESSAR AGORA", url=access_link)]]
-                                reply_markup = InlineKeyboardMarkup(keyboard)
-                                
-                                await bot.send_message(
-                                    chat_id=user_id,
-                                    text="🎁 **SEU ACESSO ESTÁ PRONTO!**",
-                                    reply_markup=reply_markup,
-                                    parse_mode='HTML'
-                                )
-                                
-                                # Atualizar estatísticas
-                                update_stats('confirmed_payments')
-                                update_stats('total_payments')
-                                
-                                # Remover pagamento pendente
-                                del pending_payments[user_id]
-                                
-                                logger.info(f"✅ Usuário {user_id} notificado sobre pagamento confirmado")
-                                
-                            except Exception as e:
-                                logger.error(f"Erro ao notificar usuário {user_id}: {e}")
+                        # WEBHOOK DESABILITADO COMPLETAMENTE - SÓ VIA VERIFICAÇÃO MANUAL
+                        # update_user_session(user_id, purchased=True)  # REMOVIDO - SEGURANÇA
+                        logger.info(f"⚠️ Webhook recebido mas IGNORADO - aguardando verificação manual obrigatória")
+                        
+                        # NÃO ENVIAR NENHUMA NOTIFICAÇÃO VIA WEBHOOK
+                        # O usuário DEVE clicar em "Verificar Pagamento" para liberar acesso
+                        logger.info(f"🔒 Webhook bloqueado - acesso só via verificação manual")
+                        # WEBHOOK COMPLETAMENTE DESABILITADO
+                        # Nenhuma ação é tomada via webhook
+                        logger.info(f"🔒 Webhook Paradise ignorado - verificação manual obrigatória")
                         
                         payment_found = True
                         break
@@ -2289,8 +2278,8 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         logger.info(f"Dados Completos: {payment_info}")
         logger.info("=" * 60)
         
-        # Marcar usuário como comprador
-        update_user_session(user_id, purchased=True)
+        # NÃO marcar como comprador ainda - só após confirmação de pagamento
+        # update_user_session(user_id, purchased=True)  # REMOVIDO - só marcar após pagamento confirmado
         
         # Mensagem do PIX com bloco de código HTML (sem emojis para Windows)
         pix_message = f"""PIX GERADO COM SUCESSO!
@@ -2393,9 +2382,15 @@ async def check_payment_status(query, user_id):
         
         if gateway == 'paradise':
             # Verificar via Paradise (GATEWAY PRINCIPAL)
-            paradise = ParadiseGateway()
-            status = await paradise.check_payment_status(payment_id)
-            logger.info(f"🔍 Status Paradise: {status}")
+            if not payment_id or payment_id == 'None':
+                logger.error(f"❌ Payment ID inválido para Paradise: {payment_id}")
+                status = None
+            else:
+                paradise = ParadiseGateway()
+                status = await paradise.check_payment_status(payment_id)
+                logger.info(f"🔍 Status Paradise: {status}")
+                logger.info(f"🔍 Payment ID usado: {payment_id}")
+                logger.info(f"🔍 Gateway: {gateway}")
         elif gateway == 'pushynpay':
             # Verificar via PushynPay com múltiplas tentativas
             max_attempts = 3
@@ -2415,6 +2410,28 @@ async def check_payment_status(query, user_id):
             status = None
         
         logger.info(f"📊 Status Retornado: {status}")
+        
+        # VALIDAÇÃO RIGOROSA: Só liberar acesso se status for EXATAMENTE 'paid'
+        if status is None:
+            logger.error("❌ FALHA NA VERIFICAÇÃO - Status retornou None")
+            await query.edit_message_text("""❌ ERRO NA VERIFICAÇÃO DE PAGAMENTO
+
+🔧 Sistema temporariamente indisponível
+📞 Entre em contato com o suporte
+
+💰 Valor: R$ {:.2f}
+📋 Plano: {}""".format(payment_info['amount'], payment_info['plan']))
+            return
+        elif status == 'api_key_invalid':
+            logger.error("❌ API KEY PARADISE INVÁLIDA - BLOQUEANDO ACESSO")
+            await query.edit_message_text("""❌ SISTEMA INDISPONÍVEL
+
+🔧 Configuração de pagamento temporariamente indisponível
+📞 Entre em contato com o suporte para resolver
+
+💰 Valor: R$ {:.2f}
+📋 Plano: {}""".format(payment_info['amount'], payment_info['plan']))
+            return
         
         # Se pagamento confirmado
         if status == 'paid':
@@ -2489,8 +2506,24 @@ Obrigado pela compra! 🚀""")
             except ImportError:
                 logger.warning("Funções do shared_data não disponíveis")
             
+            # MARCAR USUÁRIO COMO COMPRADOR APENAS APÓS CONFIRMAÇÃO
+            update_user_session(user_id, purchased=True)
+            logger.info(f"✅ Usuário {user_id} marcado como comprador após confirmação de pagamento")
+            
             # Adicionar evento de pagamento confirmado
             add_event('PAYMENT_CONFIRMED', f'Pagamento confirmado: R$ {payment_info["amount"]:.2f} - {payment_info["plan"]}', user_id)
+            
+        elif status == 'failed':
+            # Pagamento falhou - informar usuário
+            await query.edit_message_text(f"""❌ PAGAMENTO FALHOU
+
+💔 Seu pagamento não foi processado com sucesso.
+
+🔄 Tente gerar um novo PIX clicando em "Comprar" novamente.
+
+💰 Valor: R$ {payment_info['amount']:.2f}
+📋 Plano: {payment_info['plan']}""")
+            return
             
         elif status == 'pending':
             # Pagamento pendente - permitir verificação novamente
@@ -3385,10 +3418,10 @@ async def main():
     else:
         logger.warning("⚠️ Paradise API com problemas - usando fallbacks")
     
-    # Iniciar servidor Flask para webhooks
-    flask_thread = threading.Thread(target=run_flask_server, daemon=True)
-    flask_thread.start()
-    logger.info("🌐 Servidor Flask iniciado na porta 5000 para webhooks")
+    # SERVIDOR FLASK DESABILITADO - SÓ POLLING
+    # flask_thread = threading.Thread(target=run_flask_server, daemon=True)
+    # flask_thread.start()
+    logger.info("🔒 Servidor Flask DESABILITADO - usando apenas polling para segurança")
     
     # Inicializar todos os bots
     success = await start_all_bots()
