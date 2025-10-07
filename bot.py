@@ -477,12 +477,30 @@ class ParadiseGateway:
             
             if response.status_code >= 200 and response.status_code < 300:
                 response_data = response.json()
-                logger.info(f"📄 Paradise Response completa: {json.dumps(response_data, indent=2)}")
+                
+                # ============================================
+                # 🚨 LOG CRÍTICO - RESPOSTA COMPLETA DO PARADISE
+                # ============================================
+                logger.error("=" * 80)
+                logger.error("🚨 RESPOSTA COMPLETA DO PARADISE - ANÁLISE CRÍTICA")
+                logger.error("=" * 80)
+                logger.error(f"Status Code: {response.status_code}")
+                logger.error(f"Response Headers: {dict(response.headers)}")
+                logger.error(f"Response Text: {response.text}")
+                logger.error(f"Response JSON: {json.dumps(response_data, indent=2)}")
+                logger.error("=" * 80)
                 
                 # ============================================
                 # 🔑 EXTRAIR TRANSACTION DATA
                 # ============================================
                 transaction_data = response_data.get('transaction', response_data)
+                
+                logger.error("=" * 80)
+                logger.error("🔍 ANÁLISE DOS CAMPOS DISPONÍVEIS")
+                logger.error("=" * 80)
+                logger.error(f"response_data keys: {list(response_data.keys())}")
+                logger.error(f"transaction_data keys: {list(transaction_data.keys()) if transaction_data else 'N/A'}")
+                logger.error("=" * 80)
                 
                 # ============================================
                 # 🔑 EXTRAIR ID REAL DO PARADISE (CRÍTICO!)
@@ -493,10 +511,37 @@ class ParadiseGateway:
                     transaction_data.get('id') or
                     transaction_data.get('transaction_id') or
                     transaction_data.get('hash') or
+                    transaction_data.get('reference') or
+                    transaction_data.get('uuid') or
+                    transaction_data.get('payment_id') or
                     response_data.get('id') or
                     response_data.get('transaction_id') or
-                    response_data.get('hash')
+                    response_data.get('hash') or
+                    response_data.get('reference') or
+                    response_data.get('uuid') or
+                    response_data.get('payment_id')
                 )
+                
+                # ============================================
+                # 🔍 LOG DETALHADO DE TODOS OS CAMPOS
+                # ============================================
+                logger.error("=" * 80)
+                logger.error("🔍 TENTATIVA DE EXTRAÇÃO DO ID")
+                logger.error("=" * 80)
+                logger.error(f"transaction_data.get('id'): {transaction_data.get('id')}")
+                logger.error(f"transaction_data.get('transaction_id'): {transaction_data.get('transaction_id')}")
+                logger.error(f"transaction_data.get('hash'): {transaction_data.get('hash')}")
+                logger.error(f"transaction_data.get('reference'): {transaction_data.get('reference')}")
+                logger.error(f"transaction_data.get('uuid'): {transaction_data.get('uuid')}")
+                logger.error(f"transaction_data.get('payment_id'): {transaction_data.get('payment_id')}")
+                logger.error(f"response_data.get('id'): {response_data.get('id')}")
+                logger.error(f"response_data.get('transaction_id'): {response_data.get('transaction_id')}")
+                logger.error(f"response_data.get('hash'): {response_data.get('hash')}")
+                logger.error(f"response_data.get('reference'): {response_data.get('reference')}")
+                logger.error(f"response_data.get('uuid'): {response_data.get('uuid')}")
+                logger.error(f"response_data.get('payment_id'): {response_data.get('payment_id')}")
+                logger.error(f"ID FINAL EXTRAÍDO: {paradise_transaction_id}")
+                logger.error("=" * 80)
                 
                 logger.info("=" * 60)
                 logger.info("🔑 EXTRAÇÃO DO ID DA TRANSAÇÃO PARADISE")
