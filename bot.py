@@ -64,6 +64,10 @@ BOT_TOKENS = [
     '8318857911:AAEgO1xAEOcrowDKlhvBAbHpdEurlP9KRI8',  # Token 14
     '8291262027:AAEbD_oJUPfnA5x-ezKgki3rJ59dqkWlJVM',  # Token 15
     '8431731800:AAGCbWUmywbTwsWdm6v6K7YNUHB_TV8euyI',  # Token 16
+    '8254035317:AAEKoqkWRSH3wU1wDScyXS-wUaKAwaz9l1M',  # Token 17
+    '8401891904:AAGQitipBznkNA0APT99IIDnlC5jGaOuffA',  # Token 18
+    '7800075775:AAF6t7gYbAiNtrzh5fLwva2UKUw2CUw1Q_k',  # Token 19
+    '7668725764:AAFfcuKzna07xFyysOfBIbl5FmKPi59152g',  # Token 20
 ]
 
 # Configuração de links por bot (OPÇÃO 1)
@@ -84,6 +88,10 @@ BOT_LINKS = {
     '8318857911:AAEgO1xAEOcrowDKlhvBAbHpdEurlP9KRI8': 'https://oacessoliberado.shop/acessoliberado2',
     '8291262027:AAEbD_oJUPfnA5x-ezKgki3rJ59dqkWlJVM': 'https://oacessoliberado.shop/acessoliberado2',
     '8431731800:AAGCbWUmywbTwsWdm6v6K7YNUHB_TV8euyI': 'https://oacessoliberado.shop/acessoliberado2',
+    '8254035317:AAEKoqkWRSH3wU1wDScyXS-wUaKAwaz9l1M': 'https://oacessoliberado.shop/acessoliberado2',
+    '8401891904:AAGQitipBznkNA0APT99IIDnlC5jGaOuffA': 'https://oacessoliberado.shop/acessoliberado2',
+    '7800075775:AAF6t7gYbAiNtrzh5fLwva2UKUw2CUw1Q_k': 'https://oacessoliberado.shop/acessoliberado2',
+    '7668725764:AAFfcuKzna07xFyysOfBIbl5FmKPi59152g': 'https://oacessoliberado.shop/acessoliberado2',
 }
 
 # Configurações SyncPay (GATEWAY PRINCIPAL) - CREDENCIAIS OFICIAIS
