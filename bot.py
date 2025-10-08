@@ -2389,11 +2389,11 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         import random
         random_hash = random.randint(100000, 999999)
         
-        # Valor ligeiramente diferente (variação maior para evitar cache)
-        cache_buster = random.uniform(0.01, 0.99)  # R$ 0.01 a R$ 0.99
-        unique_amount = amount + cache_buster
+        # VALOR EXATO - SEM CACHE BUSTER
+        # SyncPay e outros gateways já geram IDs únicos automaticamente
+        unique_amount = amount
         
-        logger.info(f"🔄 Cache buster aplicado: +R$ {cache_buster:.2f} = R$ {unique_amount:.2f}")
+        logger.info(f"💰 Valor do pagamento: R$ {unique_amount:.2f}")
         
         # ============================================
         # 📱 CAPTURAR TELEFONE REAL DO TELEGRAM
