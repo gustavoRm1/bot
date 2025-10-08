@@ -1,7 +1,7 @@
 <?php
 // PARADISE CHECKOUT BUILDER - PROXY V30 (Direct Status Check)
 $API_TOKEN         = 'sk_c3728b109649c7ab1d4e19a61189dbb2b07161d6955b8f20b6023c55b8a9e722';
-$OFFER_HASH        = '';
+$OFFER_HASH        = 'e87f909afc';
 $PRODUCT_HASH      = 'prod_6c60b3dd3ae2c63e';
 $BASE_AMOUNT       = 1997;
 $PRODUCT_TITLE     = 'Flix';

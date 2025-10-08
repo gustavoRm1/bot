@@ -58,16 +58,12 @@ BOT_TOKENS = [
     '7344610657:AAH3_JTdnZH_0CkNxfhb0hAIptlfRseSaK8',  # Token 8
     '8300351452:AAEsDLhXi4Cf5WVqnQS2-7ZkjBExbn5Z17U',  # Token 9
     '8297063257:AAFFE3K8I6yycwZQ-fAGO6di0yr4n5jGh_w',  # Token 10
-    '8443691990:AAFjgMtr38_rHw6HZlnIvf3cCKTpb7m4R7Q',  # Token 11
-    '8339224972:AAEzCqgfTmPT3l6k2R9_-7L0En3c-bgOST0',  # Token 12
-    '8316837637:AAFgDiXo4HvU9RVJJrcwlkAz8kHj2xlbSok',  # Token 13
-    '8049999245:AAGHiasvg4X25RKQgdqsxLfaBjwiQI599oE',  # Token 14
-    '8454123391:AAHfSpgEFB_9UXm66NuUmHhGGRE_TkuxiGk',  # Token 15
-    '8383266949:AAEOs62d9yI1kgZ9tP6BsGTHGh4yLgcc_LI',  # Token 16
-    '8382560938:AAE4dlx7fz4VfYDZrNWqLjWn4T7hG9XTN5g',  # Token 17
-    '8260047923:AAGM3bUwqVPXWwlnYgrWfFxmS8A3TUq3CI8',  # Token 18
-    '8318857911:AAEgO1xAEOcrowDKlhvBAbHpdEurlP9KRI8',  # Token 19
-    '8291262027:AAEbD_oJUPfnA5x-ezKgki3rJ59dqkWlJVM',  # Token 20
+    '8454123391:AAHfSpgEFB_9UXm66NuUmHhGGRE_TkuxiGk',  # Token 11
+    '8382560938:AAE4dlx7fz4VfYDZrNWqLjWn4T7hG9XTN5g',  # Token 12
+    '8260047923:AAGM3bUwqVPXWwlnYgrWfFxmS8A3TUq3CI8',  # Token 13
+    '8318857911:AAEgO1xAEOcrowDKlhvBAbHpdEurlP9KRI8',  # Token 14
+    '8291262027:AAEbD_oJUPfnA5x-ezKgki3rJ59dqkWlJVM',  # Token 15
+    '8431731800:AAGCbWUmywbTwsWdm6v6K7YNUHB_TV8euyI',  # Token 16
 ]
 
 # Configuração de links por bot (OPÇÃO 1)
@@ -82,22 +78,18 @@ BOT_LINKS = {
     '7344610657:AAH3_JTdnZH_0CkNxfhb0hAIptlfRseSaK8': 'https://oacessoliberado.shop/acessoumosso',
     '8300351452:AAEsDLhXi4Cf5WVqnQS2-7ZkjBExbn5Z17U': 'https://oacessoliberado.shop/acessoumosso',
     '8297063257:AAFFE3K8I6yycwZQ-fAGO6di0yr4n5jGh_w': 'https://oacessoliberado.shop/acessoliberadinho',
-    '8443691990:AAFjgMtr38_rHw6HZlnIvf3cCKTpb7m4R7Q': 'https://oacessoliberado.shop/acessoliberadinho',
-    '8339224972:AAEzCqgfTmPT3l6k2R9_-7L0En3c-bgOST0': 'https://oacessoliberado.shop/acessoliberadinho',
-    '8316837637:AAFgDiXo4HvU9RVJJrcwlkAz8kHj2xlbSok': 'https://oacessoliberado.shop/acessoliberadinho',
-    '8049999245:AAGHiasvg4X25RKQgdqsxLfaBjwiQI599oE': 'https://oacessoliberado.shop/acessoliberado2',
     '8454123391:AAHfSpgEFB_9UXm66NuUmHhGGRE_TkuxiGk': 'https://oacessoliberado.shop/acessoliberado2',
-    '8383266949:AAEOs62d9yI1kgZ9tP6BsGTHGh4yLgcc_LI': 'https://oacessoliberado.shop/acessoliberado2',  # Token 16
-    '8382560938:AAE4dlx7fz4VfYDZrNWqLjWn4T7hG9XTN5g': 'https://oacessoliberado.shop/acessoliberado2',  # Token 17
-    '8260047923:AAGM3bUwqVPXWwlnYgrWfFxmS8A3TUq3CI8': 'https://oacessoliberado.shop/acessoliberado2',  # Token 18
-    '8318857911:AAEgO1xAEOcrowDKlhvBAbHpdEurlP9KRI8': 'https://oacessoliberado.shop/acessoliberado2',  # Token 19
-    '8291262027:AAEbD_oJUPfnA5x-ezKgki3rJ59dqkWlJVM': 'https://oacessoliberado.shop/acessoliberado2',  # Token 20
+    '8382560938:AAE4dlx7fz4VfYDZrNWqLjWn4T7hG9XTN5g': 'https://oacessoliberado.shop/acessoliberado2',
+    '8260047923:AAGM3bUwqVPXWwlnYgrWfFxmS8A3TUq3CI8': 'https://oacessoliberado.shop/acessoliberado2',
+    '8318857911:AAEgO1xAEOcrowDKlhvBAbHpdEurlP9KRI8': 'https://oacessoliberado.shop/acessoliberado2',
+    '8291262027:AAEbD_oJUPfnA5x-ezKgki3rJ59dqkWlJVM': 'https://oacessoliberado.shop/acessoliberado2',
+    '8431731800:AAGCbWUmywbTwsWdm6v6K7YNUHB_TV8euyI': 'https://oacessoliberado.shop/acessoliberado2',
 }
 
-# Configurações Paradise (GATEWAY PRINCIPAL)
-PARADISE_API_KEY = 'sk_c3728b109649c7ab1d4e19a61189dbb2b07161d6955b8f20b6023c55b8a9e722'
-PARADISE_BASE_URL = 'https://multi.paradisepags.com/api/v1'
-PARADISE_PRODUCT_HASH = 'prod_6c60b3dd3ae2c63e'
+# Configurações SyncPay (GATEWAY PRINCIPAL) - CREDENCIAIS OFICIAIS
+SYNCPAY_CLIENT_ID = '7dbead7e-f6bd-4aaa-a625-f5ffc6dc5399'
+SYNCPAY_CLIENT_SECRET = 'b6d75387-28ad-4ce1-83aa-96699c0c03da'
+SYNCPAY_BASE_URL = 'https://api.syncpayments.com.br'
 
 # Configurações PushynPay (FALLBACK)
 PUSHYNPAY_TOKEN = '48868|59JBZdNBBZRHY1dI0sxmXvcj8LXWcJnV3oeRj8Vhefd226e7'
@@ -110,19 +102,19 @@ PUSHYNPAY_ENDPOINTS = [
     f"{PUSHYNPAY_BASE_URL_PRODUCTION}/api/pix/cashIn"
 ]
 
-# Configurações SyncPay Original (mantido como backup)
-SYNCPAY_CLIENT_ID = '54f3518a-1e5f-4f08-8c68-5a79df3bddf9'
-SYNCPAY_CLIENT_SECRET = 'f49f4e62-d0c6-4c17-a8ac-e036a0fc69a2'
-SYNCPAY_BASE_URL = 'https://api.syncpayments.com.br'
+# Configurações Paradise (FALLBACK 2)
+PARADISE_API_KEY = 'sk_c3728b109649c7ab1d4e19a61189dbb2b07161d6955b8f20b6023c55b8a9e722'
+PARADISE_BASE_URL = 'https://multi.paradisepags.com/api/v1'
+PARADISE_PRODUCT_HASH = 'prod_6c60b3dd3ae2c63e'
 
 # Sistema de múltiplos gateways
 GATEWAYS = {
-    'paradise': {
-        'name': 'Paradise (Principal)',
-        'base_url': PARADISE_BASE_URL,
-        'api_key': PARADISE_API_KEY,
-        'product_hash': PARADISE_PRODUCT_HASH,
-        'active': True,
+    'syncpay': {
+        'name': 'SyncPay (Principal)',
+        'base_url': SYNCPAY_BASE_URL,
+        'client_id': SYNCPAY_CLIENT_ID,
+        'client_secret': SYNCPAY_CLIENT_SECRET,
+        'active': True,  # ATIVADO - Estrutura correta implementada
         'priority': 1,  # PRIORIDADE MÁXIMA - Gateway Principal
         'max_amount': 10000.00,
         'min_amount': 0.50
@@ -137,15 +129,15 @@ GATEWAYS = {
         'min_amount': 0.50,  # Valor mínimo R$ 0,50 (50 centavos)
         'endpoints': PUSHYNPAY_ENDPOINTS
     },
-    'syncpay_original': {
-        'name': 'SyncPay Original (Fallback 2)',
-        'base_url': SYNCPAY_BASE_URL,
-        'client_id': SYNCPAY_CLIENT_ID,
-        'client_secret': SYNCPAY_CLIENT_SECRET,
+    'paradise': {
+        'name': 'Paradise (Fallback 2)',
+        'base_url': PARADISE_BASE_URL,
+        'api_key': PARADISE_API_KEY,
+        'product_hash': PARADISE_PRODUCT_HASH,
         'active': True,
         'priority': 3,  # Fallback 2
         'max_amount': 10000.00,
-        'min_amount': 1.00
+        'min_amount': 0.50
     }
 }
 
@@ -406,7 +398,7 @@ def mark_response_sent(user_id):
     user_requests[user_id]['pending_request'] = False
 
 class ParadiseGateway:
-    """Integração com Paradise como Gateway Principal - VERSÃO CORRIGIDA"""
+    """Integração com Paradise como Fallback Gateway"""
     
     def __init__(self):
         self.api_key = PARADISE_API_KEY
@@ -419,35 +411,27 @@ class ParadiseGateway:
         return {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-API-Key': self.api_key
+            'X-API-Key': self.api_key,
+            'User-Agent': 'Paradise-Bot/1.0'
         }
     
     async def create_payment(self, amount, description, customer_data, user_id, checkout_url=None):
-        """
-        Cria um pagamento PIX via Paradise. Versão robusta: garante que pix_data
-        é definido apenas quando realmente montado e evita UnboundLocalError.
-        """
-        pix_data = None
+        """Cria um pagamento PIX via Paradise (Fallback)"""
         try:
-            logger.info(f"🏛️ Criando pagamento Paradise: R$ {amount}")
+            logger.info(f"🏝️ Criando pagamento Paradise (Fallback): R$ {amount}")
             internal_reference = f'BOT-{user_id}-{int(time.time())}'
 
-            # Preparar dados do cliente com valores padrão válidos
+            # Preparar dados do cliente
             clean_document = re.sub(r"\D", "", customer_data.get("document", "")) or "12345678900"
             clean_phone = re.sub(r"\D", "", customer_data.get("phone", "")) or "11999999999"
             
-            # ============================================
-            # 💰 CONVERTER VALOR PARA CENTAVOS (PARADISE EXIGE EM CENTAVOS)
-            # ============================================
-            # Exemplo: R$ 14.97 -> 1497 centavos
+            # Converter valor para centavos
             amount_in_cents = round(amount * 100)
             
-            logger.info(f"💰 Convertendo valor: R$ {amount:.2f} -> {amount_in_cents} centavos")
-            
-            # Payload EXATO que funcionou no site web
+            # Payload simplificado para Paradise
             payload = {
-                "amount": amount_in_cents,  # ✅ VALOR EM CENTAVOS
-                "productHash": "prod_6c60b3dd3ae2c63e",  # ✅ HARDCODED - FUNCIONOU NO SITE
+                "amount": amount_in_cents,
+                "productHash": self.product_hash,
                 "customer": {
                     "name": customer_data.get("name", f"Cliente {user_id}"),
                     "email": customer_data.get("email", f"cliente{user_id}@email.com"),
@@ -456,132 +440,44 @@ class ParadiseGateway:
                 }
             }
             
-            logger.error("=" * 80)
-            logger.error("📤 ENVIANDO PARA PARADISE API")
-            logger.error("=" * 80)
-            logger.error(f"URL: {self.base_url.rstrip('/')}/transaction.php")
-            logger.error(f"Headers: {self._get_headers()}")
-            logger.error(f"Payload: {json.dumps(payload, indent=2)}")
-            logger.error("=" * 80)
-
-            resp = requests.post(
-                f"{self.base_url.rstrip('/')}/transaction.php",
+            # Fazer requisição
+            response = requests.post(
+                f"{self.base_url}/transaction.php",
                 json=payload,
                 headers=self._get_headers(),
                 timeout=self.timeout
             )
-
-            logger.error("=" * 80)
-            logger.error("📥 RESPOSTA DO PARADISE")
-            logger.error("=" * 80)
-            logger.error(f"Status Code: {getattr(resp, 'status_code', None)}")
-            logger.error(f"Response Text: {getattr(resp, 'text', 'N/A')}")
-            logger.error("=" * 80)
-
-            if resp is None:
-                logger.error("❌ Resp is None ao chamar Paradise")
-                return None
-
-            # tentar parse JSON
-            try:
-                response_data = resp.json() if resp.text else {}
-            except Exception:
-                logger.error("❌ Paradise retornou JSON inválido")
-                logger.debug("Resposta text: %s", getattr(resp, "text", None))
-                return None
-
-            # logger detalhado só quando necessário
-            logger.debug("Paradise response keys: %s", list(response_data.keys()) if isinstance(response_data, dict) else str(type(response_data)))
-
-            # Transaction data pode vir dentro de 'transaction' ou na raiz
-            transaction_data = None
-            if isinstance(response_data, dict) and "transaction" in response_data and isinstance(response_data["transaction"], dict):
-                transaction_data = response_data["transaction"]
-            elif isinstance(response_data, dict):
-                transaction_data = response_data
-
-            # Extrair ID - priorizar transaction_id/hash, evitar usar 'id' interno como preferência
-            paradise_transaction_id = None
-            if isinstance(transaction_data, dict):
-                paradise_transaction_id = transaction_data.get("transaction_id") or transaction_data.get("hash") or transaction_data.get("hash_id")
-            if not paradise_transaction_id and isinstance(response_data, dict):
-                paradise_transaction_id = response_data.get("transaction_id") or response_data.get("hash") or response_data.get("hash_id")
-            # ultimo recurso: aceitar 'id' se não for igual à referência interna
-            if not paradise_transaction_id and isinstance(transaction_data, dict):
-                tmp_id = transaction_data.get("id") or response_data.get("id")
-                if tmp_id and tmp_id != internal_reference:
-                    paradise_transaction_id = tmp_id
-
-            # Extrair qr/pix code de campos possíveis
-            qr_code = None
-            if isinstance(transaction_data, dict):
-                qr_code = transaction_data.get("qr_code") or transaction_data.get("pix_qr_code") or transaction_data.get("qr_code_base64")
-            if not qr_code and isinstance(response_data, dict):
-                qr_code = response_data.get("qr_code") or response_data.get("pix_qr_code") or response_data.get("pix") or response_data.get("qr_code_base64")
-
-            # Caso Paradise retorne success mas sem qr_code, log completo para análise
-            if not qr_code:
-                logger.error("❌ Paradise retornou sem QR Code")
-                logger.error("Response JSON completo: %s", json.dumps(response_data))
-                return None
-
-            # Assegurar que ID também exista
-            if not paradise_transaction_id:
-                logger.warning("⚠️ Paradise não retornou transaction_id padrão, usando referência interna.")
-                paradise_transaction_id = internal_reference
-
-            # Constituir pix_data (sempre dentro do ramo onde qr_code e id existem)
-            pix_data = {
-                "id": paradise_transaction_id,
-                "transaction_id": paradise_transaction_id,
-                "qr_code": qr_code,
-                "pix_qr_code": qr_code,
-                "expires_at": (transaction_data.get("expires_at") if isinstance(transaction_data, dict) else response_data.get("expires_at")),
-                "amount": amount,
-                "reference": internal_reference,
-                "gateway": "paradise",
-                "raw_response": response_data
-            }
-
-            logger.info("✅ PARADISE PIX CRIADO COM SUCESSO - transaction_id: %s", paradise_transaction_id)
-            return pix_data
-
-        except requests.exceptions.RequestException as e:
-            logger.error("❌ Erro de conexão Paradise: %s", e, exc_info=True)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Extrair dados da resposta
+                transaction_id = data.get("id") or data.get("hash")
+                qr_code = data.get("qr_code") or data.get("pix_qr_code")
+                
+                if qr_code:
+                    return {
+                        "id": transaction_id,
+                        "transaction_id": transaction_id,
+                        "qr_code": qr_code,
+                        "pix_qr_code": qr_code,
+                        "amount": amount,
+                        "reference": internal_reference,
+                        "gateway": "paradise",
+                        "raw_response": data
+                    }
+            
+            logger.error(f"❌ Paradise falhou: {response.status_code}")
             return None
+            
         except Exception as e:
-            logger.error("❌ Erro geral Paradise: %s", e, exc_info=True)
-            # garantir que não tentamos acessar pix_data se não foi criado
+            logger.error(f"❌ Erro Paradise: {e}")
             return None
     
     async def check_payment_status(self, transaction_id):
-        """Verifica status do pagamento no Paradise - VERSÃO CORRIGIDA"""
+        """Verifica status do pagamento no Paradise"""
         try:
-            logger.info("=" * 60)
-            logger.info("🔍 VERIFICANDO STATUS NO PARADISE")
-            logger.info(f"Transaction ID recebido: {transaction_id}")
-            logger.info(f"Tipo: {type(transaction_id)}")
-            logger.info("=" * 60)
-            
-            # ============================================
-            # 🚨 VALIDAÇÃO CRÍTICA DO TRANSACTION ID
-            # ============================================
-            
-            # Se o ID começa com 'BOT-', é o ID interno, NÃO o do Paradise!
-            if transaction_id.startswith('BOT-'):
-                logger.error("=" * 60)
-                logger.error("❌ CRÍTICO: TENTANDO VERIFICAR COM ID INTERNO!")
-                logger.error(f"ID recebido: {transaction_id}")
-                logger.error("Este NÃO é o ID do Paradise!")
-                logger.error("Paradise não vai reconhecer este ID!")
-                logger.error("=" * 60)
-                
-                # BLOQUEAR COMPLETAMENTE A VERIFICAÇÃO
-                return None
-            
-            # ============================================
-            # 📡 FAZER REQUISIÇÃO AO PARADISE
-            # ============================================
+            logger.info(f"🔍 Verificando status Paradise: {transaction_id}")
             
             response = requests.get(
                 f"{self.base_url}/check_status.php",
@@ -590,61 +486,23 @@ class ParadiseGateway:
                 timeout=self.timeout
             )
             
-            logger.info(f"📥 Paradise Status Response Code: {response.status_code}")
-            
             if response.status_code == 200:
                 data = response.json()
-                logger.info(f"📄 Paradise Status Response: {json.dumps(data, indent=2)}")
-                
-                # Verificar diferentes formatos de resposta do Paradise
-                payment_status = (
-                    data.get('payment_status') or 
-                                data.get('status') or 
-                    data.get('state')
-                )
-                
-                logger.info(f"📊 Status extraído: {payment_status}")
-                
-                # ============================================
-                # 🔒 VALIDAÇÃO RIGOROSA DO STATUS
-                # ============================================
+                payment_status = data.get('payment_status') or data.get('status')
                 
                 if payment_status == 'paid':
-                    logger.info("=" * 60)
-                    logger.info("✅ PAGAMENTO CONFIRMADO PELO PARADISE")
-                    logger.info(f"Transaction ID: {transaction_id}")
-                    logger.info("=" * 60)
                     return 'paid'
-                    
-                elif payment_status in ['pending', 'waiting', 'processing', 'created']:
-                    logger.info(f"⏳ Pagamento Paradise PENDENTE (status: {payment_status})")
+                elif payment_status in ['pending', 'waiting']:
                     return 'pending'
-                    
-                elif payment_status in ['failed', 'cancelled', 'expired', 'rejected']:
-                    logger.info(f"❌ Pagamento Paradise FALHOU (status: {payment_status})")
-                    return 'failed'
-                    
-                elif payment_status == 'not_found':
-                    logger.warning(f"⚠️ Transação Paradise NÃO ENCONTRADA: {transaction_id}")
-                    logger.warning("💡 Pode ser problema de timing - transação ainda sendo processada")
-                    return 'pending'  # Tratar como pendente para nova verificação
-                    
+                elif payment_status == 'cancelled':
+                    return 'cancelled'
                 else:
-                    logger.warning(f"⚠️ Status Paradise DESCONHECIDO: {payment_status}")
-                    return 'failed'
-                    
-            elif response.status_code == 401:
-                logger.error("❌ API Key Paradise INVÁLIDA")
-                return 'api_key_invalid'
-                
-            else:
-                logger.warning(f"⚠️ Paradise status check failed: {response.status_code}")
-                return None
+                    return 'pending'
+            
+            return None
             
         except Exception as e:
-            logger.error(f"❌ Erro ao verificar status Paradise: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"❌ Erro verificação Paradise: {e}")
             return None
     
     async def test_connection(self):
@@ -652,48 +510,350 @@ class ParadiseGateway:
         try:
             logger.info("🧪 Testando conexão com Paradise API...")
             
-            test_payload = {
-                "amount": 100,
-                "description": "Teste de Conexão",
-                "reference": f"TEST-{int(time.time())}",
-                "checkoutUrl": "",
-                "productHash": self.product_hash,
-                "orderbump": [],
-                "customer": {
-                    'name': 'Teste Bot',
-                    'email': 'teste@bot.com',
-                    'document': '12345678900',
-                    'phone': '11999999999'
-                },
-                "address": {
-                    "street": "Rua do Teste",
-                    "number": "0",
-                    "neighborhood": "Teste",
-                    "city": "Teste",
-                    "state": "BR",
-                    "zipcode": "00000000",
-                    "complement": "Teste"
-                }
-            }
-            
-            response = requests.post(
-                f"{self.base_url}/transaction.php",
-                json=test_payload,
+            # Teste simples de conexão
+            response = requests.get(
+                f"{self.base_url}/check_status.php",
+                params={'hash': 'test'},
                 headers=self._get_headers(),
                 timeout=10
             )
             
-            logger.info(f"🧪 Teste Paradise - Status: {response.status_code}")
-            
-            if response.status_code == 200:
-                logger.info("✅ Conexão Paradise OK")
+            if response.status_code in [200, 404]:  # 404 é esperado para hash inválido
+                logger.info("✅ Paradise API conectada com sucesso!")
                 return True
             else:
-                logger.error(f"❌ Teste Paradise falhou: {response.status_code}")
+                logger.error(f"❌ Paradise API falhou: {response.status_code}")
                 return False
                 
         except Exception as e:
-            logger.error(f"❌ Erro no teste Paradise: {e}")
+            logger.error(f"❌ Erro ao testar Paradise API: {e}")
+            return False
+
+class SyncPayGateway:
+    """Integração com SyncPay como Gateway Principal - VERSÃO COMPLETA"""
+    
+    def __init__(self):
+        self.client_id = SYNCPAY_CLIENT_ID
+        self.client_secret = SYNCPAY_CLIENT_SECRET
+        self.base_url = SYNCPAY_BASE_URL
+        self.timeout = 30
+        self.access_token = None
+        self.token_expires_at = 0
+        
+    def _get_headers(self):
+        """Retorna headers para requisições SyncPay"""
+        return {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'SyncPay-Bot/1.0'
+        }
+    
+    async def _get_access_token(self):
+        """Obtém ou renova o token de acesso SyncPay"""
+        try:
+            # Verificar se token ainda é válido (com margem de 5 minutos)
+            if (self.access_token and 
+                self.token_expires_at > time.time() + 300):
+                return self.access_token
+            
+            logger.info("🔄 Obtendo novo token de acesso SyncPay...")
+            
+            # Payload para autenticação
+            auth_payload = {
+                "client_id": self.client_id,
+                "client_secret": self.client_secret
+            }
+            
+            # Fazer requisição para obter token
+            response = requests.post(
+                f"{self.base_url}/api/partner/v1/auth-token",
+                json=auth_payload,
+                headers=self._get_headers(),
+                timeout=self.timeout
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                self.access_token = data.get('access_token')
+                expires_in = data.get('expires_in', 3600)
+                self.token_expires_at = time.time() + expires_in
+                
+                logger.info("✅ Token SyncPay obtido com sucesso")
+                return self.access_token
+            else:
+                logger.error(f"❌ Erro ao obter token SyncPay: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"❌ Erro na autenticação SyncPay: {e}")
+            return None
+    
+    def _get_auth_headers(self):
+        """Retorna headers com autorização"""
+        headers = self._get_headers()
+        if self.access_token:
+            headers['Authorization'] = f'Bearer {self.access_token}'
+        return headers
+    
+    async def create_payment(self, amount, description, customer_data, user_id, checkout_url=None):
+        """
+        Cria um pagamento PIX via SyncPay. Versão robusta com autenticação automática.
+        """
+        pix_data = None
+        try:
+            logger.info(f"🔄 Criando pagamento SyncPay: R$ {amount}")
+            internal_reference = f'BOT-{user_id}-{int(time.time())}'
+
+            # ============================================
+            # 🔐 AUTENTICAÇÃO OBRIGATÓRIA
+            # ============================================
+            token = await self._get_access_token()
+            if not token:
+                logger.error("❌ Falha na autenticação SyncPay")
+                return None
+
+            # Preparar dados do cliente
+            clean_document = re.sub(r"\D", "", customer_data.get("document", "")) or "12345678900"
+            clean_phone = re.sub(r"\D", "", customer_data.get("phone", "")) or "11999999999"
+            
+            # ============================================
+            # 💰 FORMATAR VALOR COM 2 CASAS DECIMAIS (SYNCPAY EXIGE)
+            # ============================================
+            # SyncPay exige valor em reais com NO MÁXIMO 2 casas decimais
+            amount_formatted = round(amount, 2)
+            
+            logger.info(f"💰 Formatando valor: R$ {amount} -> R$ {amount_formatted:.2f}")
+            
+            # Payload para SyncPay API Cash-In (estrutura correta)
+            payload = {
+                "amount": amount_formatted,  # Valor em reais com 2 casas decimais
+                "description": description or f"Pagamento Bot {user_id}",
+                "webhook_url": checkout_url or "https://webhook.site/test",
+                "client": {
+                    "name": customer_data.get("name", f"Cliente {user_id}"),
+                    "cpf": clean_document,
+                    "email": customer_data.get("email", f"cliente{user_id}@email.com"),
+                    "phone": clean_phone
+                }
+            }
+            
+            logger.error("=" * 80)
+            logger.error("📤 ENVIANDO PARA SYNCPAY API")
+            logger.error("=" * 80)
+            logger.error(f"URL: {self.base_url}/api/partner/v1/cash-in")
+            logger.error(f"Headers: {self._get_auth_headers()}")
+            logger.error(f"Payload: {json.dumps(payload, indent=2)}")
+            logger.error("=" * 80)
+
+            # ============================================
+            # 🔄 SISTEMA DE RETRY COM DELAY
+            # ============================================
+            max_retries = 3
+            retry_delay = 2  # segundos entre tentativas
+            resp = None
+            
+            for attempt in range(1, max_retries + 1):
+                try:
+                    logger.info(f"🔄 Tentativa {attempt}/{max_retries}...")
+                    
+                    resp = requests.post(
+                        f"{self.base_url}/api/partner/v1/cash-in",
+                        json=payload,
+                        headers=self._get_auth_headers(),
+                        timeout=30  # Aumentar timeout para 30s
+                    )
+                    
+                    # Se sucesso (status 2xx), sair do loop
+                    if 200 <= resp.status_code < 300:
+                        logger.info(f"✅ Sucesso na tentativa {attempt}")
+                        break
+                    
+                    # Se erro, logar e tentar novamente
+                    logger.warning(f"⚠️ Tentativa {attempt} falhou com status {resp.status_code}")
+                    
+                    # Se não for a última tentativa, aguardar antes de retry
+                    if attempt < max_retries:
+                        logger.info(f"⏳ Aguardando {retry_delay}s antes da próxima tentativa...")
+                        time.sleep(retry_delay)
+                        
+                except requests.exceptions.Timeout:
+                    logger.error(f"⏰ Timeout na tentativa {attempt}")
+                    if attempt < max_retries:
+                        time.sleep(retry_delay)
+                    continue
+                    
+                except requests.exceptions.ConnectionError as e:
+                    logger.error(f"🔌 Erro de conexão na tentativa {attempt}: {e}")
+                    if attempt < max_retries:
+                        time.sleep(retry_delay)
+                    continue
+                    
+                except Exception as e:
+                    logger.error(f"❌ Erro inesperado na tentativa {attempt}: {e}")
+                    if attempt < max_retries:
+                        time.sleep(retry_delay)
+                    continue
+
+            logger.error("=" * 80)
+            logger.error("📥 RESPOSTA DO SYNCPAY")
+            logger.error("=" * 80)
+            
+            # Verificar se todas as tentativas falharam
+            if resp is None:
+                logger.error("❌ Todas as tentativas falharam - Response é None")
+                return None
+            
+            logger.error(f"Status Code: {resp.status_code}")
+            logger.error(f"Response Text: {resp.text}")
+            logger.error("=" * 80)
+
+            # ============================================
+            # ✅ VALIDAR STATUS HTTP
+            # ============================================
+            if not (200 <= resp.status_code < 300):
+                logger.error(f"❌ SyncPay retornou status inválido: {resp.status_code}")
+                logger.error(f"Response: {resp.text}")
+                return None
+
+            # tentar parse JSON
+            try:
+                response_data = resp.json() if resp.text else {}
+            except Exception as e:
+                logger.error(f"❌ SyncPay retornou JSON inválido: {e}")
+                logger.error(f"Resposta text: {getattr(resp, 'text', None)}")
+                return None
+
+            # logger detalhado
+            logger.info(f"✅ Response JSON completo SyncPay: {json.dumps(response_data, indent=2)}")
+            logger.info(f"SyncPay response keys: {list(response_data.keys()) if isinstance(response_data, dict) else str(type(response_data))}")
+
+            # ============================================
+            # 🔑 EXTRAIR DADOS DA RESPOSTA SYNCPAY
+            # ============================================
+            # SyncPay retorna estrutura diferente da Paradise
+            
+            syncpay_transaction_id = None
+            qr_code = None
+            
+            # Extrair ID da transação (identifier)
+            if isinstance(response_data, dict):
+                syncpay_transaction_id = response_data.get("identifier")
+            
+            # Extrair QR Code PIX (pix_code)
+            if isinstance(response_data, dict):
+                qr_code = response_data.get("pix_code")
+
+            logger.info(f"🔑 SyncPay Transaction ID extraído: {syncpay_transaction_id}")
+            logger.info(f"🔍 QR Code: {'ENCONTRADO' if qr_code else 'NÃO ENCONTRADO'}")
+
+            # Verificar se tem QR Code
+            if not qr_code:
+                logger.error("❌ SyncPay retornou sem QR Code")
+                logger.error("Response JSON completo: %s", json.dumps(response_data, indent=2))
+                logger.error(f"Campos disponíveis: {list(response_data.keys())}")
+                return None
+            
+            logger.info(f"✅ QR Code extraído com sucesso! (tamanho: {len(qr_code)} chars)")
+
+            # Assegurar que ID também exista
+            if not syncpay_transaction_id:
+                logger.warning("⚠️ SyncPay não retornou transaction_id válido, usando referência interna.")
+                syncpay_transaction_id = internal_reference
+
+            # Constituir pix_data (formato compatível com o sistema)
+            pix_data = {
+                "id": syncpay_transaction_id,
+                "transaction_id": syncpay_transaction_id,
+                "qr_code": qr_code,
+                "pix_qr_code": qr_code,
+                "expires_at": response_data.get("expires_at"),
+                "amount": amount,
+                "reference": internal_reference,
+                "gateway": "syncpay",
+                "raw_response": response_data
+            }
+
+            logger.info("✅ SYNCPAY PIX CRIADO COM SUCESSO - transaction_id: %s", syncpay_transaction_id)
+            return pix_data
+
+        except requests.exceptions.RequestException as e:
+            logger.error("❌ Erro de conexão SyncPay: %s", e, exc_info=True)
+            return None
+        except Exception as e:
+            logger.error("❌ Erro geral SyncPay: %s", e, exc_info=True)
+            # garantir que não tentamos acessar pix_data se não foi criado
+            return None
+    
+    async def check_payment_status(self, transaction_id):
+        """Verifica status do pagamento no SyncPay"""
+        try:
+            logger.info("=" * 60)
+            logger.info("🔍 VERIFICANDO STATUS NO SYNCPAY")
+            logger.info(f"Transaction ID: {transaction_id}")
+            logger.info("=" * 60)
+            
+            # Obter token válido
+            token = await self._get_access_token()
+            if not token:
+                logger.error("❌ Falha na autenticação para verificação")
+                return None
+            
+            # Fazer requisição para verificar status
+            response = requests.get(
+                f"{self.base_url}/api/partner/v1/transaction/{transaction_id}",
+                headers=self._get_auth_headers(),
+                timeout=self.timeout
+            )
+            
+            logger.info(f"📥 SyncPay Status Response Code: {response.status_code}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                logger.info(f"📄 SyncPay Status Response: {json.dumps(response_data, indent=2)}")
+                
+                # A resposta do SyncPay vem dentro de um campo 'data'
+                data = response_data.get('data', {})
+                
+                # Verificar status do pagamento
+                status = data.get('status', '').lower()
+                
+                logger.info(f"🔍 Status extraído: {status}")
+                
+                if status == 'completed' or status == 'paid':
+                    return 'paid'
+                elif status == 'pending':
+                    return 'pending'
+                elif status == 'failed' or status == 'refunded' or status == 'cancelled':
+                    return 'cancelled'
+                else:
+                    logger.warning(f"⚠️ Status desconhecido: {status}")
+                    return 'pending'
+                    
+            else:
+                logger.error(f"❌ Erro ao verificar status: {response.status_code}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"❌ Erro na verificação SyncPay: {e}")
+            return None
+    
+    
+    async def test_connection(self):
+        """Testa conexão com SyncPay API"""
+        try:
+            logger.info("🧪 Testando conexão com SyncPay API...")
+            
+            # Testar autenticação primeiro
+            token = await self._get_access_token()
+            if not token:
+                logger.error("❌ Falha na autenticação SyncPay")
+                return False
+            
+            logger.info("✅ SyncPay API conectada com sucesso!")
+            return True
+                
+        except Exception as e:
+            logger.error(f"❌ Erro ao testar SyncPay API: {e}")
             return False
 
 class SyncPayIntegration:
@@ -909,10 +1069,38 @@ async def check_pushynpay_payment_status(payment_id):
         # Em caso de erro geral, retornar pending para permitir nova tentativa
         return 'pending'
 
-async def create_pix_payment_paradise(user_id, amount, plan_name, customer_data, checkout_url=None):
-    """Cria um pagamento PIX usando Paradise como gateway principal"""
+async def create_pix_payment_syncpay(user_id, amount, plan_name, customer_data, checkout_url=None):
+    """Cria um pagamento PIX usando SyncPay como gateway principal"""
     try:
-        logger.info(f"🏝️ Iniciando criação de PIX via Paradise")
+        logger.info(f"🔄 Iniciando criação de PIX via SyncPay")
+        
+        # Instanciar gateway SyncPay
+        syncpay = SyncPayGateway()
+        
+        # Criar pagamento
+        pix_data = await syncpay.create_payment(
+            amount=amount,
+            description=plan_name,
+            customer_data=customer_data,
+            user_id=user_id,
+            checkout_url=checkout_url
+        )
+        
+        if pix_data and pix_data.get('qr_code'):
+            logger.info(f"✅ SyncPay PIX criado com sucesso: {pix_data.get('id')}")
+            return pix_data
+        else:
+            logger.error("❌ SyncPay retornou sem código PIX")
+            return None
+            
+    except Exception as e:
+        logger.error(f"❌ Erro na criação do PIX SyncPay: {e}")
+        return None
+
+async def create_pix_payment_paradise(user_id, amount, plan_name, customer_data, checkout_url=None):
+    """Cria um pagamento PIX usando Paradise como fallback"""
+    try:
+        logger.info(f"🏝️ Iniciando criação de PIX via Paradise (Fallback)")
         
         # Instanciar gateway Paradise
         paradise = ParadiseGateway()
@@ -1087,39 +1275,45 @@ async def create_pix_payment_with_fallback(user_id, amount, plan_name, customer_
         logger.error("Nenhum gateway disponível para criar PIX")
         return None
     
+    logger.info(f"🎯 Gateway selecionado: {GATEWAYS[gateway_id]['name']} (prioridade {GATEWAYS[gateway_id]['priority']})")
+    
     max_retries = 2
     current_gateway = gateway_id
     
     for attempt in range(max_retries):
         try:
-            # Tentativa de criação de PIX
+            logger.info(f"🔄 Tentando criar PIX com gateway: {GATEWAYS[current_gateway]['name']}")
             
-            if current_gateway == 'paradise':
-                result = await create_pix_payment_paradise(user_id, amount, plan_name, customer_data)
+            if current_gateway == 'syncpay':
+                result = await create_pix_payment_syncpay(user_id, amount, plan_name, customer_data)
             elif current_gateway == 'pushynpay':
                 result = await create_pix_payment_pushynpay(user_id, amount, plan_name, customer_data)
-            elif current_gateway == 'syncpay_original':
-                result = await create_pix_payment_syncpay_original(user_id, amount, plan_name, customer_data)
+            elif current_gateway == 'paradise':
+                result = await create_pix_payment_paradise(user_id, amount, plan_name, customer_data)
             else:
                 logger.error(f"Gateway desconhecido: {current_gateway}")
                 return None
             
             if result:
                 mark_gateway_success(current_gateway)
+                logger.info(f"✅ PIX criado com sucesso via {GATEWAYS[current_gateway]['name']}")
                 return result
             else:
+                logger.warning(f"⚠️ Gateway {GATEWAYS[current_gateway]['name']} falhou na tentativa {attempt + 1}")
                 mark_gateway_failed(current_gateway, f"Falha na criação do PIX (tentativa {attempt + 1})")
                 
         except Exception as e:
             mark_gateway_failed(current_gateway, str(e))
-            logger.error(f"Erro no gateway {current_gateway}: {e}")
+            logger.error(f"❌ Erro no gateway {GATEWAYS[current_gateway]['name']}: {e}")
         
         # Tentar próximo gateway
         current_gateway = get_best_gateway(amount)
         if not current_gateway or current_gateway == gateway_id:
             break
+        
+        logger.info(f"🔀 Fazendo fallback para: {GATEWAYS[current_gateway]['name']}")
     
-    logger.error("Todos os gateways falharam ao criar PIX")
+    logger.error("❌ Todos os gateways falharam ao criar PIX")
     return None
 
 def get_next_bot():
@@ -2251,103 +2445,40 @@ async def create_payment(query, amount, description, user_id, bot_token=None):
         gateway_used = None
         
         # ============================================
-        # 🔵 TENTAR PARADISE PRIMEIRO (GATEWAY PRINCIPAL)
+        # 🎯 USAR SISTEMA DE FALLBACK AUTOMÁTICO
         # ============================================
-        try:
-            logger.info("🔵 Tentando Paradise (Gateway Principal)...")
+        
+        # Obter URL do checkout baseada no bot
+        checkout_url = BOT_LINKS.get(bot_token, 'https://oacessoliberado.shop/vip2')
+        logger.info(f"📍 Checkout URL: {checkout_url}")
+        
+        # Usar função com fallback automático (SyncPay → PushynPay → Paradise)
+        payment_data = await create_pix_payment_with_fallback(user_id, unique_amount, description, customer_data)
+        
+        if payment_data and payment_data.get('qr_code'):
+            # Extrair gateway usado
+            gateway_used = payment_data.get('gateway', 'unknown')
             
-            # Obter URL do checkout baseada no bot
-            checkout_url = BOT_LINKS.get(bot_token, 'https://oacessoliberado.shop/vip2')
-            logger.info(f"📍 Checkout URL: {checkout_url}")
+            # Extrair ID da transação
+            paradise_transaction_id = (
+                payment_data.get('id') or 
+                payment_data.get('transaction_id') or 
+                payment_data.get('identifier') or
+                payment_data.get('hash') or
+                payment_data.get('reference')
+            )
             
-            payment_data = await create_pix_payment_paradise(user_id, unique_amount, description, customer_data, checkout_url)
+            logger.info("=" * 60)
+            logger.info(f"✅ PIX CRIADO COM SUCESSO via {gateway_used.upper()}")
+            logger.info(f"Transaction ID: {paradise_transaction_id}")
+            logger.info("=" * 60)
             
-            if payment_data and payment_data.get('qr_code'):
-                gateway_used = "paradise"
-                logger.info("✅ Paradise funcionou - Gateway Principal")
-                
-                # ============================================
-                # 🔑 CRÍTICO: EXTRAIR O ID CORRETO DO PARADISE
-                # ============================================
-                
-                # O Paradise pode retornar o ID em diferentes campos
-                paradise_transaction_id = (
-                    payment_data.get('id') or 
-                    payment_data.get('transaction_id') or 
-                    payment_data.get('hash') or
-                    payment_data.get('reference')
-                )
-                
-                logger.info("=" * 60)
-                logger.info("🔑 EXTRAINDO ID DA TRANSAÇÃO PARADISE")
-                logger.info(f"Resposta completa do Paradise: {json.dumps(payment_data, indent=2)}")
-                logger.info(f"ID extraído: {paradise_transaction_id}")
-                logger.info("=" * 60)
-                
-                if not paradise_transaction_id:
-                    logger.error("❌ CRÍTICO: Paradise não retornou ID de transação!")
-                    logger.error(f"Campos disponíveis: {list(payment_data.keys())}")
-                    raise Exception("Paradise não retornou ID de transação válido")
-                
-                # Validar que o ID não é apenas um número sequencial
-                if paradise_transaction_id.isdigit() and len(paradise_transaction_id) < 10:
-                    logger.warning(f"⚠️ ID suspeito (muito curto): {paradise_transaction_id}")
-                
-                logger.info(f"✅ ID da transação Paradise confirmado: {paradise_transaction_id}")
-                
-            else:
-                raise Exception("Paradise retornou sem código PIX")
-                
-        except Exception as e:
-            logger.warning(f"Paradise falhou: {e}")
+            if not paradise_transaction_id:
+                logger.error("❌ CRÍTICO: Gateway não retornou ID de transação!")
+                logger.error(f"Campos disponíveis: {list(payment_data.keys())}")
+                raise Exception("Gateway não retornou ID de transação válido")
+        else:
             payment_data = None
-        
-        # ============================================
-        # 🟡 SE PARADISE FALHOU, TENTAR PUSHYNPAY (FALLBACK 1)
-        # ============================================
-        if not payment_data:
-            try:
-                logger.info("🟡 Tentando PushynPay (Fallback 1)...")
-                payment_data = await create_pix_payment_pushynpay(user_id, unique_amount, description, customer_data)
-                
-                if payment_data and payment_data.get('qr_code'):
-                    gateway_used = "pushynpay"
-                    logger.info("✅ PushynPay funcionou - Fallback 1")
-                    
-                    # PushynPay também precisa do ID correto
-                    paradise_transaction_id = payment_data.get('id') or payment_data.get('payment_id')
-                    
-                    if not paradise_transaction_id:
-                        raise Exception("PushynPay não retornou ID de transação válido")
-                else:
-                    raise Exception("PushinPay retornou sem código PIX")
-                    
-            except Exception as e:
-                logger.warning(f"PushynPay falhou: {e}")
-                payment_data = None
-        
-        # ============================================
-        # 🟠 SE AMBOS FALHARAM, TENTAR SYNCPAY (FALLBACK 2)
-        # ============================================
-        if not payment_data:
-            try:
-                logger.info("🟠 Tentando SyncPay Original (Fallback 2)...")
-                payment_data = await create_pix_payment_syncpay_original(user_id, unique_amount, description, customer_data)
-                
-                if payment_data and payment_data.get('pix_code'):
-                    gateway_used = "syncpay_original"
-                    logger.info("✅ SyncPay Original funcionou - Fallback 2")
-                    
-                    paradise_transaction_id = payment_data.get('id') or payment_data.get('payment_id')
-                    
-                    if not paradise_transaction_id:
-                        raise Exception("SyncPay não retornou ID de transação válido")
-                else:
-                    raise Exception("SyncPay retornou sem código PIX")
-                    
-            except Exception as e:
-                logger.warning(f"SyncPay Original falhou: {e}")
-                payment_data = None
         
         # ============================================
         # ❌ SE TODOS FALHARAM
@@ -2601,19 +2732,19 @@ async def check_payment_status(query, user_id):
             logger.info(f"📡 Tentativa {verification_attempts}/{max_attempts}")
             
             try:
-                if gateway == 'paradise':
-                    paradise = ParadiseGateway()
-                    status = await paradise.check_payment_status(payment_id)
-                    logger.info(f"📥 Resposta Paradise (tentativa {verification_attempts}): {status}")
+                if gateway == 'syncpay':
+                    syncpay = SyncPayGateway()
+                    status = await syncpay.check_payment_status(payment_id)
+                    logger.info(f"📥 Resposta SyncPay (tentativa {verification_attempts}): {status}")
                 
                 elif gateway == 'pushynpay':
                     status = await check_pushynpay_payment_status(payment_id)
                     logger.info(f"📥 Resposta PushynPay (tentativa {verification_attempts}): {status}")
                 
-                elif gateway == 'syncpay_original':
-                    syncpay = SyncPayIntegration()
-                    status = syncpay.check_payment_status(payment_id)
-                    logger.info(f"📥 Resposta SyncPay (tentativa {verification_attempts}): {status}")
+                elif gateway == 'paradise':
+                    paradise = ParadiseGateway()
+                    status = await paradise.check_payment_status(payment_id)
+                    logger.info(f"📥 Resposta Paradise (tentativa {verification_attempts}): {status}")
                 
                 else:
                     logger.error(f"❌ Gateway desconhecido: {gateway}")
